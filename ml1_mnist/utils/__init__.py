@@ -1,1 +1,1 @@
-from .mnist import *
+from _utils import *

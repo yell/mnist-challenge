@@ -1,2 +1,4 @@
 numpy
-matplotlib
+scipy
+matplotlib # optional, for visualization
+nose # optional, for testing

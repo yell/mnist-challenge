@@ -18,13 +18,14 @@ class TrainTestSplitter(object):
         """
         self.shuffle = shuffle
         self.random_seed = random_seed
-        if self.random_seed is None:
-            self.rng = random.Random()
-        else:
-            self.rng = random.Random(self.random_seed)
+        self.rng = random.Random()
+
+    def _flush_rng(self):
+        if not self.random_seed is None:
+            self.rng.seed(self.random_seed)
 
 
-    def split(self, y, train_ratio=0.8, stratify=True):
+    def split(self, y, train_ratio=0.8, stratify=False):
         """
         Split data into train and test subsets.
 
@@ -45,6 +46,8 @@ class TrainTestSplitter(object):
         test : (n_samples - n_train,) ndarray
             The testing set indices for that split.
         """
+        self._flush_rng()
+
         if not stratify:
             indices = range(len(y))
             if self.shuffle:
@@ -71,7 +74,7 @@ class TrainTestSplitter(object):
 
         return np.array(train), np.array(test)
 
-    def make_k_folds(self, y, n_folds=3, stratify=True):
+    def make_k_folds(self, y, n_folds=3, stratify=False):
         """
         Split data into folds of (approximately) equal size.
 
@@ -91,6 +94,8 @@ class TrainTestSplitter(object):
         fold : ndarray
             Indices for current fold.
         """
+        self._flush_rng()
+
         if not stratify:
             indices = range(len(y))
             if self.shuffle:
@@ -115,15 +120,17 @@ class TrainTestSplitter(object):
             fold = []
             for label, indices in labels_indices.items():
                 size = len(indices) / n_folds
-                if k < n_folds - 1:
+                if k != n_folds - 1:
                     fold += indices[(k * size):((k + 1) * size)]
                 else:
                     fold += indices[(k * size):]
+
             if self.shuffle:
                 self.rng.shuffle(fold)
+
             yield np.array(fold)
 
-    def k_fold_split(self, y, n_folds=3, stratify=True):
+    def k_fold_split(self, y, n_folds=3, stratify=False):
         """
         Split data into train and test subsets for K-fold CV.
 
@@ -145,6 +152,15 @@ class TrainTestSplitter(object):
         test : (n_samples - n_train,) ndarray
             The testing set indices for current split.
         """
-        folds = [fold for fold in self.make_k_folds(y, n_folds=n_folds, stratify=stratify)]
+        self._flush_rng()
+
+        folds = list(self.make_k_folds(y, n_folds=n_folds, stratify=stratify))
         for i in xrange(n_folds):
             yield np.concatenate(folds[:i] + folds[(i + 1):]), folds[i]
+
+
+if __name__ == '__main__':
+    # run corresponding tests
+    import tests.test_model_selection as t
+    from testing import run_tests
+    run_tests(__file__, t)
