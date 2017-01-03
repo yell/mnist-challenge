@@ -1,6 +1,7 @@
 import os.path
 import struct
 import numpy as np
+import seaborn as sns; sns.set()
 from matplotlib import pyplot as plt
 
 
@@ -27,13 +28,14 @@ def load_mnist(mode='train', path='.'):
 
     with open(fname_data, 'rb') as fdata:
         magic, n_samples, n_rows, n_cols = struct.unpack(">IIII", fdata.read(16))
-        data = np.fromfile(fdata, dtype=np.uint8).reshape(n_samples, n_rows * n_cols)
+        data = np.fromfile(fdata, dtype=np.uint8)
+        data = data.reshape(n_samples, n_rows * n_cols)
 
     with open(fname_target, 'rb') as ftarget:
         magic, n_samples = struct.unpack(">II", ftarget.read(8))
         target = np.fromfile(ftarget, dtype=np.int8)
 
-    return data, target
+    return data.astype(float), target
 
 
 def plot_mnist_digit(x, target=None):
@@ -41,6 +43,7 @@ def plot_mnist_digit(x, target=None):
     Render a given numpy.uint8 2D array of pixel data.
     """
     image = x.reshape((28, 28))
-    plt.imshow(image, cmap='gray')
+    fig = plt.figure(figsize=(6, 5))
+    ax = sns.heatmap(image, cmap='Greys_r')
     if target:
-        plt.title("Label is {0}".format(target))
+        ax.set_title("Label is {0}".format(target), fontsize=18)

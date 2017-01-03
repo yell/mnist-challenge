@@ -1,4 +1,5 @@
 numpy
 scipy
 matplotlib # optional, for visualization
+seaborn # optional, for visualization
 nose # optional, for testing
