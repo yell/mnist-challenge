@@ -12,7 +12,7 @@ class TrainTestSplitter(object):
         ----------
         shuffle : bool, optional
             Whether to shuffle the data.
-        random_seed : None | int, optional
+        random_seed : None or int, optional
             When `shuffle`=True, pseudo-random number generator `random_seed` used for shuffling.
             If None, use default random's RNG for shuffling.
         """
@@ -21,7 +21,7 @@ class TrainTestSplitter(object):
         self.rng = random.Random()
 
     def _flush_rng(self):
-        if not self.random_seed is None:
+        if self.random_seed is not None:
             self.rng.seed(self.random_seed)
 
 

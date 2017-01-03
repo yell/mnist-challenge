@@ -17,7 +17,7 @@ def zero_one_loss(y_true, y_pred, normalize=True):
 
     Returns
     -------
-    loss : float | int
+    loss : float or int
         If `normalize` == True, return the fraction of
         misclassifications (float), else it returns
         the number of misclassifications (int).
@@ -32,6 +32,7 @@ def zero_one_loss(y_true, y_pred, normalize=True):
     return loss
 
 
+# aliases
 misclassification_rate = zero_one_loss
 
 
