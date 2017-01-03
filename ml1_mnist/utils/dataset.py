@@ -36,10 +36,11 @@ def load_mnist(mode='train', path='.'):
     return data, target
 
 
-def plot_mnist_digit(x):
+def plot_mnist_digit(x, target=None):
     """
     Render a given numpy.uint8 2D array of pixel data.
     """
-    fig = plt.figure()
     image = x.reshape((28, 28))
     plt.imshow(image, cmap='gray')
+    if target:
+        plt.title("Label is {0}".format(target))
