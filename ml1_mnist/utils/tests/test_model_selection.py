@@ -1,4 +1,3 @@
-import unittest
 import numpy as np
 
 import env
@@ -127,7 +126,6 @@ class TestSplit(object):
             np.testing.assert_allclose(train, fold1)
             np.testing.assert_allclose(test, fold2)
 
-    # @unittest.skip("Known issue")
     def test_make_2_folds_split(self):
         """
         Ensure making 2 folds is equivalent to splitting 50:50 (even with shuffling).
