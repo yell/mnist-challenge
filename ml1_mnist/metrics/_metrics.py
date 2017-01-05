@@ -38,6 +38,6 @@ misclassification_rate = zero_one_loss
 
 if __name__ == '__main__':
     # run corresponding tests
-    import tests.test_metrics as t
-    from testing import run_tests
+    import test_metrics as t
+    import env; from utils.testing import run_tests
     run_tests(__file__, t)
