@@ -1,5 +1,7 @@
-import random
 import numpy as np
+
+import env
+from utils import RNG
 
 
 class TrainTestSplitter(object):
@@ -13,16 +15,11 @@ class TrainTestSplitter(object):
         shuffle : bool, optional
             Whether to shuffle the data.
         random_seed : None or int, optional
-            When `shuffle`=True, pseudo-random number generator `random_seed` used for shuffling.
-            If None, use default random's RNG for shuffling.
+    |      Pseudo-random number generator seed used for random sampling.
         """
         self.shuffle = shuffle
         self.random_seed = random_seed
-        self.rng = random.Random()
-
-    def _flush_rng(self):
-        if self.random_seed is not None:
-            self.rng.seed(self.random_seed)
+        self.rng = RNG(self.random_seed)
 
 
     def split(self, y, train_ratio=0.8, stratify=False):
@@ -46,13 +43,12 @@ class TrainTestSplitter(object):
         test : (n_samples - n_train,) ndarray
             The testing set indices for that split.
         """
-        self._flush_rng()
+        self.rng.reseed()
+        n = len(y)
 
         if not stratify:
-            indices = range(len(y))
-            if self.shuffle:
-                self.rng.shuffle(indices)
-            train_size = int(train_ratio * len(y))
+            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=int)
+            train_size = int(train_ratio * n)
             return indices[:train_size], indices[train_size:]
 
         # group indices by label
@@ -62,17 +58,17 @@ class TrainTestSplitter(object):
                 labels_indices[label] = []
             labels_indices[label].append(index)
 
-        train, test = [], []
+        train, test = np.empty(0, dtype=int), np.empty(0, dtype=int)
         for label, indices in labels_indices.items():
             size = int(train_ratio * len(indices))
-            train += labels_indices[label][:size]
-            test += labels_indices[label][size:]
+            train = np.append(train, labels_indices[label][:size])
+            test = np.append(test, labels_indices[label][size:])
 
         if self.shuffle:
             self.rng.shuffle(train)
             self.rng.shuffle(test)
 
-        return np.array(train), np.array(test)
+        return train, test
 
     def make_k_folds(self, y, n_folds=3, stratify=False):
         """
@@ -94,19 +90,18 @@ class TrainTestSplitter(object):
         fold : ndarray
             Indices for current fold.
         """
-        self._flush_rng()
+        self.rng.reseed()
+        n = len(y)
 
         if not stratify:
-            indices = range(len(y))
-            if self.shuffle:
-                self.rng.shuffle(indices)
-            fold_size = len(y) / n_folds
+            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=int)
+            fold_size = n / n_folds
             for k in xrange(n_folds):
                 if k < n_folds - 1:
                     fold = indices[(k * fold_size):((k + 1) * fold_size)]
                 else:
                     fold = indices[(k * fold_size):]
-                yield np.array(fold)
+                yield fold
             return
 
         # group indices
@@ -117,18 +112,18 @@ class TrainTestSplitter(object):
             labels_indices[label].append(index)
 
         for k in xrange(n_folds):
-            fold = []
+            fold = np.empty(0, dtype=int)
             for label, indices in labels_indices.items():
                 size = len(indices) / n_folds
                 if k != n_folds - 1:
-                    fold += indices[(k * size):((k + 1) * size)]
+                    fold = np.append(fold, indices[(k * size):((k + 1) * size)])
                 else:
-                    fold += indices[(k * size):]
+                    fold = np.append(fold, indices[(k * size):])
 
             if self.shuffle:
                 self.rng.shuffle(fold)
 
-            yield np.array(fold)
+            yield fold
 
     def k_fold_split(self, y, n_folds=3, stratify=False):
         """
@@ -152,11 +147,9 @@ class TrainTestSplitter(object):
         test : (n_samples - n_train,) ndarray
             The testing set indices for current split.
         """
-        self._flush_rng()
-
         folds = list(self.make_k_folds(y, n_folds=n_folds, stratify=stratify))
         for i in xrange(n_folds):
-            yield np.concatenate(folds[:i] + folds[(i + 1):]), folds[i]
+            yield np.append(folds[:i], folds[(i + 1):]), folds[i]
 
 
 if __name__ == '__main__':

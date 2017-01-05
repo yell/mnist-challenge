@@ -1,4 +1,5 @@
 import numpy as np
+from unittest import skip
 
 import env
 from model_selection import TrainTestSplitter as TTS
@@ -19,6 +20,7 @@ class TestSplit(object):
             train, test = tts.split(self.y, train_ratio=train_ratio, stratify=False)
             np.testing.assert_allclose(self.y, np.concatenate((self.y[train], self.y[test])))
 
+    @skip("use this test for `random.Random` rng")
     def test_split_random_seed(self):
         """
         Ensure for fixed (known) `random_seed` TTS instances produce

@@ -1,4 +1,5 @@
-import random
+import numpy as np
+
 
 def one_hot(y):
     n_values = np.max(y) + 1
