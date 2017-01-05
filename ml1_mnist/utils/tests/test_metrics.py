@@ -1,7 +1,6 @@
 import numpy as np
 
-import env
-from metrics import zero_one_loss
+import env; from metrics import zero_one_loss
 
 
 class TestZeroOneLoss(object):

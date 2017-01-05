@@ -2,8 +2,8 @@ import struct
 import os.path
 import numpy as np
 
-from matplotlib import pyplot as plt
 import seaborn as sns; sns.set()
+from matplotlib import pyplot as plt
 
 
 def load_mnist(mode='train', path='.'):
@@ -54,7 +54,7 @@ def plot_mnist_digit2(x, target=None):
     Render a given array of pixel data using seaborn.
     """
     image = x.reshape((28, 28))
-    fig = plt.figure(figsize=(6, 5))
+    fig = plt.figure(figsize=(7, 6))
     ax = sns.heatmap(image, cmap='Greys_r')
     if target:
         ax.set_title("Label is {0}".format(target), fontsize=18)

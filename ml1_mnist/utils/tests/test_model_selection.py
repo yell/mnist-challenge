@@ -1,8 +1,7 @@
 import numpy as np
 from unittest import skip
 
-import env
-from model_selection import TrainTestSplitter as TTS
+import env; from model_selection import TrainTestSplitter as TTS
 
 
 class TestSplit(object):

@@ -1,7 +1,6 @@
 import numpy as np
 
-import env
-from utils import RNG
+import env; from utils import RNG
 
 
 class TrainTestSplitter(object):
@@ -149,7 +148,7 @@ class TrainTestSplitter(object):
         """
         folds = list(self.make_k_folds(y, n_folds=n_folds, stratify=stratify))
         for i in xrange(n_folds):
-            yield np.append(folds[:i], folds[(i + 1):]), folds[i]
+            yield np.concatenate(folds[:i] + folds[(i + 1):]), folds[i]
 
 
 if __name__ == '__main__':
