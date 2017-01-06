@@ -1,6 +1,8 @@
 from copy import deepcopy
 import numpy as np
 
+import env; from utils import import_trace
+
 
 class BaseEstimator(object):
     """Base class for all estimators."""
@@ -89,7 +91,7 @@ class BaseEstimator(object):
         """Obtain parameters of the model.
 
         # omit "interesting" members
-        # add model name
+        # add model name (including import trace)
 
         Parameters
         ----------
@@ -105,7 +107,13 @@ class BaseEstimator(object):
         """
         params = vars(self)
         params = {key: params[key] for key in params if not key.startswith('_')}
-        params['model'] = self.__class__.__name__
+        trace = import_trace(
+            module_path=__file__,
+            main_package_name='ml1_mnist',
+            include_main_package=False
+        )
+        class_name = self.__class__.__name__
+        params['model'] = '.'.join([trace, class_name])
         if deep:
             params = deepcopy(params)
         return params
