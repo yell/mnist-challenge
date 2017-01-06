@@ -1,5 +1,6 @@
+.idea/*
+.ipynb_checkpoints/*
 data/*
 report/*
 *.pyc
-.idea/*
-.ipynb_checkpoints/*
+*.json

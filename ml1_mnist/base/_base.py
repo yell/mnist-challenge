@@ -1,7 +1,11 @@
-from copy import deepcopy
+import sys
+import os.path
 import numpy as np
+from copy import deepcopy
 
-import env; from utils import import_trace
+import env
+from utils import import_trace
+from utils.read_write import save_model
 
 
 class BaseEstimator(object):
@@ -107,8 +111,12 @@ class BaseEstimator(object):
         """
         params = vars(self)
         params = {key: params[key] for key in params if not key.startswith('_')}
+
+        # path where the actual classifier is stored
+        module_name = sys.modules[self.__class__.__module__].__name__
+        module_path = os.path.abspath(module_name.replace('.', '/'))
         trace = import_trace(
-            module_path=__file__,
+            module_path=module_path,
             main_package_name='ml1_mnist',
             include_main_package=False
         )
@@ -143,8 +151,5 @@ class BaseEstimator(object):
         """Save (additional) class-specific parameters."""
         raise NotImplementedError()
 
-    # def save(self, filename='model.json'):
-    #     # store as must attributes / params as possible and --> dict --> json
-    #     # add _save()
-    #     # store to file
-    #     pass
+    def save(self, filename=None, **json_params):
+        save_model(self, filename, **json_params)
