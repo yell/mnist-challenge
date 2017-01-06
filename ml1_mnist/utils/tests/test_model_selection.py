@@ -11,9 +11,7 @@ class TestSplit(object):
                            1, 1, 2, 2, 3, 3, 3])
 
     def test_split_no_shuffle(self):
-        """
-        Ensure order is preserved if no shuffle.
-        """
+        """Ensure order is preserved if no shuffle."""
         tts = TTS(shuffle=False)
         for train_ratio in np.arange(0.15, 0.96, 0.1):
             train, test = tts.split(self.y, train_ratio=train_ratio, stratify=False)

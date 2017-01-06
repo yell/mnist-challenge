@@ -20,7 +20,6 @@ class TrainTestSplitter(object):
         self.random_seed = random_seed
         self.rng = RNG(self.random_seed)
 
-
     def split(self, y, train_ratio=0.8, stratify=False):
         """
         Split data into train and test subsets.

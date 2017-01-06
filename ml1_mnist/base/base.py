@@ -1,18 +1,25 @@
+from copy import deepcopy
 import numpy as np
 
 
 class BaseEstimator(object):
     """Base class for all estimators."""
 
-    def __init__(self, y_required=True):
-        self.y_required = y_required
+    def __init__(self, _y_required=True):
+        self._y_required = _y_required
+        self._X = None
+        self._y = None
+        self._n_samples = None
+        self._n_features = None
+        self._n_outputs = None
+        self._called_fit = False
 
-    def _validate_input(self, X, y=None):
+    def _check_X_y(self, X, y=None):
         """
-        Ensure inputs are in the expected format.
+        Ensure inputs are in the expected format:
 
-        - convert `X` [and `y`] to `np.ndarray` if needed
-        - ensure `X` [and `y`] are not empty
+        Convert `X` [and `y`] to `np.ndarray` if needed
+        and ensure `X` [and `y`] are not empty.
 
         Parameters
         ----------
@@ -20,8 +27,9 @@ class BaseEstimator(object):
             Data (feature vectors).
         y : (n_samples,) or (n_samples, n_outputs) array-like
             Labels vector. By default is required, but may be omitted
-            if `y_required` is False.
+            if `_y_required` is False.
         """
+        # validate `X`
         if not isinstance(X, np.ndarray):
             X = np.array(X)
 
@@ -29,54 +37,106 @@ class BaseEstimator(object):
             raise ValueError('number of features must be > 0')
 
         if X.ndim == 1:
-            self.n_samples, self.n_features = 1, X.shape
+            self._n_samples, self._n_features = 1, X.shape
         else:
-            self.n_samples, self.n_features = X.shape[0], np.prod(X.shape[1:])
+            self._n_samples, self._n_features = X.shape[0], np.prod(X.shape[1:])
 
-        # self.X = X
-
-        if self.y_required:
+        # validate `y` if needed
+        if self._y_required:
             if y is None:
                 raise ValueError('missed required argument `y`')
 
             if not isinstance(y, np.ndarray):
-                self.y = np.array(y)
+                y = np.array(y)
 
             if y.size == 0:
                 raise ValueError('number of outputs must be > 0')
 
-        # self.y = y
+            # TODO: decide whether to check len(y) == self._n_samples (semi-supervised learning)?
+            if y.ndim == 1:
+                self._n_outputs = 1
+            else:
+                self._n_outputs = np.prod(y.shape[1:])
 
-    def _fit(self, X, y=None):
+        self._X = X
+        self._y = y
+
+    def _fit(self, X, y=None, **params):
+        """Class-specific `fit` routine."""
         raise NotImplementedError()
 
-    def fit(self, X, y=None):
-        self._validate_input(X, y)
-        self._fit(X, y)
+    def fit(self, X, y=None, **params):
+        """Fit the model according to the given training data (infrastructure)."""
+        self._check_X_y(X, y)
+        self._fit(X, y, **params)
+        self._called_fit = True
 
+    def _predict(self, X=None, **params):
+        """Class-specific `predict` routine."""
+        raise NotImplementedError()
 
-    # def _predict(self):
-    #     raise NotImplementedError()
-    #
-    # def predict(self):
-    #     pass
-    #
-    #
-    # def _save(self):
-    #     raise NotImplementedError()
-    #
+    def predict(self, X=None, **params):
+        """Predict the target for the provided data (infrastructure)."""
+        if not isinstance(X, np.ndarray):
+            X = np.array(X)
+
+        if self._called_fit:
+            return self._predict(X, **params)
+        else:
+            raise ValueError('`fit` must be called before calling `predict`')
+
+    def get_params(self, deep=True):
+        """Obtain parameters of the model.
+
+        # omit "interesting" members
+        # add model name
+
+        Parameters
+        ----------
+        deep : bool, optional
+            Whether to deepcopy all the attributes.
+
+        Returns
+        -------
+        params : dict
+            Parameters of the model. Includes all attributes (members,
+            not methods), that not start with underscore ("_") and also model
+            name being class name stored in 'model' parameter.
+        """
+        params = vars(self)
+        params = {key: params[key] for key in params if not key.startswith('_')}
+        params['model'] = self.__class__.__name__
+        if deep:
+            params = deepcopy(params)
+        return params
+
+    def set_params(self, **params):
+        """Set parameters of the model.
+
+        Parameters
+        ----------
+        params : dict
+            New parameters.
+
+        Returns
+        -------
+        self
+        """
+        for key, value in params.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return self
+
+    def _load(self):
+        """Load (additional) class-specific parameters."""
+        raise NotImplementedError()
+
+    def _save(self):
+        """Save (additional) class-specific parameters."""
+        raise NotImplementedError()
+
     # def save(self, filename='model.json'):
     #     # store as must attributes / params as possible and --> dict --> json
     #     # add _save()
     #     # store to file
-    #     pass
-    #
-    #
-    # def clone(self):
-    #     pass
-    #
-    # def get_params(self):
-    #     pass
-    #
-    # def _pprint(self):
     #     pass
