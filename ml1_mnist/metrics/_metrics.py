@@ -1,5 +1,11 @@
 # TODO: add validation routine (numpyify if needed + check equal lengths)
 import numpy as np
+try:
+    import seaborn as sns
+    sns.set()
+    from matplotlib import pyplot as plt
+except ImportError:
+    pass
 
 
 def accuracy_score(y_true, y_pred, normalize=True):
@@ -125,17 +131,53 @@ def confusion_matrix(y_true, y_pred, labels=None, normalize=None):
     if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
     if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
     labels = labels or range(max(max(y_true), max(y_pred)) + 1)
+
     C = np.zeros((len(labels), len(labels)), dtype=np.int)
     for t, p in zip(y_true, y_pred):
-        if all(z in labels for z in (t, p)):
+        if t in labels and p in labels:
             C[labels.index(t)][labels.index(p)] += 1
+
     if normalize == 'rows':
         row_sums = C.astype(np.float).sum(axis=1)[:, np.newaxis]
         C = C / np.maximum(np.ones_like(row_sums), row_sums)
+
     elif normalize == 'cols':
         col_sums = C.astype(np.float).sum(axis=0)
         C = C / np.maximum(np.ones_like(col_sums), col_sums)
+
     return C
+
+
+def plot_confusion_matrix(C, labels=None, labels_fontsize=None, **heatmap_params):
+    fig = plt.figure()
+
+    # default params
+    labels = labels or range(C.shape[0])
+    labels_fontsize = labels_fontsize or 13
+    annot_fontsize = 14
+    xy_label_fontsize = 21
+
+    # set default params where possible
+    if not 'annot' in heatmap_params:
+        heatmap_params['annot'] = True
+    if not 'fmt' in heatmap_params:
+        heatmap_params['fmt'] = 'd' if C.dtype is np.dtype('int') else '.3f'
+    if not 'annot_kws' in heatmap_params:
+        heatmap_params['annot_kws'] = {'size': annot_fontsize}
+    elif not 'size' in heatmap_params['annot_kws']:
+        heatmap_params['annot_kws']['size'] = annot_fontsize
+    if not 'xticklabels' in heatmap_params:
+        heatmap_params['xticklabels'] = labels
+    if not 'yticklabels' in heatmap_params:
+        heatmap_params['yticklabels'] = labels
+
+    # plot the stuff
+    with plt.rc_context(rc={'xtick.labelsize': labels_fontsize,
+                            'ytick.labelsize': labels_fontsize}):
+        ax = sns.heatmap(C, **heatmap_params)
+        plt.xlabel('predicted', fontsize=xy_label_fontsize)
+        plt.ylabel('actual', fontsize=xy_label_fontsize)
+        return ax
 
 
 # aliases
