@@ -45,7 +45,7 @@ class TrainTestSplitter(object):
         n = len(y)
 
         if not stratify:
-            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=int)
+            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=np.int)
             train_size = int(train_ratio * n)
             return indices[:train_size], indices[train_size:]
 
@@ -56,7 +56,7 @@ class TrainTestSplitter(object):
                 labels_indices[label] = []
             labels_indices[label].append(index)
 
-        train, test = np.empty(0, dtype=int), np.empty(0, dtype=int)
+        train, test = np.empty(0, dtype=np.int), np.empty(0, dtype=np.int)
         for label, indices in labels_indices.items():
             size = int(train_ratio * len(indices))
             train = np.append(train, labels_indices[label][:size])
@@ -92,7 +92,7 @@ class TrainTestSplitter(object):
         n = len(y)
 
         if not stratify:
-            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=int)
+            indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=np.int)
             fold_size = n / n_folds
             for k in xrange(n_folds):
                 if k < n_folds - 1:
@@ -110,7 +110,7 @@ class TrainTestSplitter(object):
             labels_indices[label].append(index)
 
         for k in xrange(n_folds):
-            fold = np.empty(0, dtype=int)
+            fold = np.empty(0, dtype=np.int)
             for label, indices in labels_indices.items():
                 size = len(indices) / n_folds
                 if k != n_folds - 1:

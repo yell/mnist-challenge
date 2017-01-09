@@ -24,7 +24,7 @@ def accuracy_score(y_true, y_pred, normalize=True):
     """
     if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
     if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
-    score = sum(np.all(z == t) for z, t in zip(y_pred, y_true))
+    score = sum(np.all(t == p) for t, p in zip(y_true, y_pred))
     if normalize:
         score /= float(len(y_true))
     return score
@@ -52,10 +52,90 @@ def zero_one_loss(y_true, y_pred, normalize=True):
     """
     if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
     if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
-    loss = sum(np.any(z != t) for z, t in zip(y_pred, y_true))
+    loss = sum(np.any(t != p) for t, p in zip(y_true, y_pred))
     if normalize:
         loss /= float(len(y_true))
     return loss
+
+
+def confusion_matrix(y_true, y_pred, labels=None, normalize=None):
+    """Compute confusion matrix.
+
+    By definition a confusion matrix C is such that C_{i, j}
+    is equal to the number of observations known to be in group i
+    but predicted to be in group j.
+
+    Thus in binary classification, the count of
+     true negatives is C_{0,0},
+    false negatives is C_{1,0},
+     true positives is C_{1,1} and
+    false positives is C_{0,1}.
+
+    Notes
+    -----
+    Only `n_outputs` = 1 case is supported for now.
+
+    Parameters
+    ----------
+    y_true : (n_samples,) array-like
+        Ground truth (correct) labels.
+    y_pred : (n_samples,) array-like
+        Predicted labels, as returned by a classifier.
+    labels : (n_classes,) array-like
+        List of labels to index the matrix. If no `labels`
+        are provided, they are assumed to be [0, 1, ..., N],
+        where N is max(max(`y_true`), max(`y_pred`)).
+    normalize : None or {'rows', 'cols'}, optional
+        Whether to normalize confusion matrix.
+        If `normalize` == 'rows', normalize c.m. to have rows summed to 1,
+        this is useful for finding how each class has been classified.
+        If `normalize` == 'cols', normalize c.m. to have columns summed to 1,
+        this is useful for finding what classes are responsible for each classification.
+
+    Returns
+    -------
+    C : (n_classes, n_classes) ndarray
+        Confusion matrix.
+
+    Examples
+    --------
+    >>> y_true = [2, 0, 2, 2, 0, 1]
+    >>> y_pred = [0, 0, 2, 2, 0, 2]
+    >>> confusion_matrix(y_true, y_pred)
+    array([[2, 0, 0],
+           [0, 0, 1],
+           [1, 0, 2]])
+    >>> confusion_matrix(y_true, y_pred, labels=[0, 2])
+    array([[2, 0],
+           [1, 2]])
+    >>> confusion_matrix(y_true, y_pred, labels=range(4))
+    array([[2, 0, 0, 0],
+           [0, 0, 1, 0],
+           [1, 0, 2, 0],
+           [0, 0, 0, 0]])
+    >>> confusion_matrix(y_true, y_pred, normalize='rows')
+    array([[ 1.        ,  0.        ,  0.        ],
+           [ 0.        ,  0.        ,  1.        ],
+           [ 0.33333333,  0.        ,  0.66666667]])
+    >>> confusion_matrix(y_true, y_pred, normalize='cols')
+    array([[ 0.66666667,  0.        ,  0.        ],
+           [ 0.        ,  0.        ,  0.33333333],
+           [ 0.33333333,  0.        ,  0.66666667]])
+    """
+    if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
+    if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
+    labels = labels or range(max(max(y_true), max(y_pred)) + 1)
+    C = np.zeros((len(labels), len(labels)), dtype=np.int)
+    for t, p in zip(y_true, y_pred):
+        if all(z in labels for z in (t, p)):
+            C[labels.index(t)][labels.index(p)] += 1
+    if normalize == 'rows':
+        row_sums = C.astype(np.float).sum(axis=1)[:, np.newaxis]
+        C = C / np.maximum(np.ones_like(row_sums), row_sums)
+    elif normalize == 'cols':
+        col_sums = C.astype(np.float).sum(axis=0)
+        C = C / np.maximum(np.ones_like(col_sums), col_sums)
+    return C
 
 
 # aliases

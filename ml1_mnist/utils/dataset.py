@@ -13,7 +13,7 @@ def load_mnist(mode='train', path='.'):
     Returns
     -------
     data : (n_samples, 784) ndarray
-        Data representing raw pixel intensities (0. - 255.).
+        Data representing raw pixel intensities (in 0.-255. range).
     target : (n_samples,) ndarray
         Labels vector.
     """
