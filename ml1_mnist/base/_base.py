@@ -67,40 +67,44 @@ class BaseEstimator(object):
         self._X = X
         self._y = y
 
-    def _fit(self, X, y=None, **params):
+    def _fit(self, X, y=None, **fit_params):
         """Class-specific `fit` routine."""
         raise NotImplementedError()
 
-    def fit(self, X, y=None, **params):
+    def fit(self, X, y=None, **fit_params):
         """Fit the model according to the given training data (infrastructure)."""
         self._check_X_y(X, y)
-        self._fit(X, y, **params)
+        self._fit(X, y, **fit_params)
         self._called_fit = True
 
-    def _predict(self, X=None, **params):
+    def _predict(self, X=None, **predict_params):
         """Class-specific `predict` routine."""
         raise NotImplementedError()
 
-    def predict(self, X=None, **params):
+    def predict(self, X=None, **predict_params):
         """Predict the target for the provided data (infrastructure)."""
         if not isinstance(X, np.ndarray):
             X = np.array(X)
 
         if self._called_fit:
-            return self._predict(X, **params)
+            return self._predict(X, **predict_params)
         else:
             raise ValueError('`fit` must be called before calling `predict`')
 
-    def get_params(self, deep=True):
-        """Obtain parameters of the model.
+    def get_params(self, deep=True, **params_mask):
+        """Get parameters (attributes) of the model.
 
-        # omit "interesting" members
         # add model name (including import trace)
 
         Parameters
         ----------
         deep : bool, optional
             Whether to deepcopy all the attributes.
+        params_mask : kwargs, optional
+            Enables to control which attributes to include/exclude.
+            If some attributes set to True, return only them.
+            If some attributes set to False, return all excluding them.
+            If there are mixed attributes, ValueError is raised.
 
         Returns
         -------
@@ -109,8 +113,21 @@ class BaseEstimator(object):
             not methods), that not start with underscore ("_") and also model
             name being class name stored in 'model' parameter.
         """
+        if all(x in map(bool, params_mask.values()) for x in (False, True)):
+            raise ValueError('`params_mask` cannot contain True and False values simultaneously')
+
+        # collect all attributes
         params = vars(self)
+
+        # omit "interesting" members
         params = {key: params[key] for key in params if not key.startswith('_')}
+
+        # filter according to the mask provided
+        if params_mask:
+            if params_mask.values()[0]:
+                params = {key: params[key] for key in params if key in params_mask}
+            else:
+                params = {key: params[key] for key in params if not key in params_mask}
 
         # path where the actual classifier is stored
         module_name = sys.modules[self.__class__.__module__].__name__
@@ -131,8 +148,8 @@ class BaseEstimator(object):
 
         Parameters
         ----------
-        params : dict
-            New parameters.
+        params : kwargs
+            New parameters and their values.
 
         Returns
         -------

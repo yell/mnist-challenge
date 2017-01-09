@@ -1,6 +1,6 @@
 import numpy as np
 
-import env; from utils import RNG
+import env; from utils.random import RNG
 
 
 class TrainTestSplitter(object):
