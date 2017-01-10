@@ -71,7 +71,7 @@ class BaseEstimator(object):
         raise NotImplementedError()
 
     def fit(self, X, y=None, **fit_params):
-        """Fit the model according to the given training data (infrastructure)."""
+        """Fit the model according to the given training data."""
         self._check_X_y(X, y)
         self._fit(X, y, **fit_params)
         self._called_fit = True
@@ -81,7 +81,7 @@ class BaseEstimator(object):
         raise NotImplementedError()
 
     def predict(self, X=None, **predict_params):
-        """Predict the target for the provided data (infrastructure)."""
+        """Predict the target for the provided data."""
         if not isinstance(X, np.ndarray):
             X = np.array(X)
 
@@ -91,7 +91,7 @@ class BaseEstimator(object):
             raise ValueError('`fit` must be called before calling `predict`')
 
     def get_params(self, deep=True, **params_mask):
-        """Get parameters (attributes) of the model.
+        """Get parameters and attributes of the model.
 
         # add model name (including import trace)
 
@@ -143,7 +143,7 @@ class BaseEstimator(object):
         return params
 
     def set_params(self, **params):
-        """Set parameters of the model.
+        """Set parameters and attributes of the model.
 
         Parameters
         ----------
@@ -155,17 +155,17 @@ class BaseEstimator(object):
         self
         """
         for key, value in params.items():
-            if hasattr(self, key):
+            if not key.startswith('_') and hasattr(self, key):
                 setattr(self, key, value)
         return self
 
-    def _load(self):
-        """Load (additional) class-specific parameters."""
-        raise NotImplementedError()
+    def _serialize(self, params):
+        """Class-specific parameters serialization routine."""
+        return params
 
-    def _save(self):
-        """Save (additional) class-specific parameters."""
-        raise NotImplementedError()
+    def _deserialize(self, params):
+        """Class-specific parameters deserialization routine."""
+        return params
 
     def save(self, filename=None, params_mask={}, json_params={}):
         save_model(self, filename, params_mask, json_params)

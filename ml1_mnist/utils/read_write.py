@@ -4,13 +4,11 @@
 import json
 import importlib
 
-import env
-
 
 def save_model(model, filepath=None, params_mask={}, json_params={}):
     filepath = filepath or 'model.json'
     params = model.get_params(deep=False, **params_mask)
-    # params <- model._save()
+    params = model._serialize(params)
     with open(filepath, 'w') as f:
         json.dump(params, f, **json_params)
 
@@ -30,8 +28,8 @@ def load_model(filepath=None):
 
     if model_class:
         model = model_class()
+        params = model._deserialize(params)
         model.set_params(**params)
-        # model._load(params)
         return model
 
     raise ValueError("cannot find model '{0}'".format(model_path))
