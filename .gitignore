@@ -1,6 +1,7 @@
 .idea/*
 .ipynb_checkpoints/*
-data/*
-report/*
+data/*.idx1-ubyte
+data/*.idx3-ubyte
+report/*.txt
 *.pyc
 *.json

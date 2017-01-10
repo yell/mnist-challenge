@@ -7,9 +7,9 @@ import importlib
 import env
 
 
-def save_model(model, filepath=None, **json_params):
+def save_model(model, filepath=None, params_mask={}, json_params={}):
     filepath = filepath or 'model.json'
-    params = model.get_params(deep=False)
+    params = model.get_params(deep=False, **params_mask)
     # params <- model._save()
     with open(filepath, 'w') as f:
         json.dump(params, f, **json_params)
@@ -19,6 +19,7 @@ def load_model(filepath=None):
     filepath = filepath or 'model.json'
     with open(filepath) as f:
         params = json.load(f)
+
     if not 'model' in params:
         raise ValueError("missed required field: 'model'")
     model_path = params['model']

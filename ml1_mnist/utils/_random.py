@@ -26,7 +26,7 @@ class RNG(np.random.RandomState):
     >>> rng.rand()
     0.1586839721544656
     """
-    def __init__(self, seed):
+    def __init__(self, seed=None):
         if not seed is None and not isinstance(seed, int):
             raise ValueError("invalid seed: '{0}'".format(seed))
         self._seed = seed

@@ -3,7 +3,6 @@ import os.path
 import numpy as np
 from copy import deepcopy
 
-import env
 from utils import import_trace
 from utils.read_write import save_model
 
@@ -58,7 +57,7 @@ class BaseEstimator(object):
             if y.size == 0:
                 raise ValueError('number of outputs must be > 0')
 
-            # TODO: decide whether to check len(y) == self._n_samples (semi-supervised learning)?
+            # TODO: decide whether to check len(y) == self._n_samples (for semi-supervised learning)?
             if y.ndim == 1:
                 self._n_outputs = 1
             else:
@@ -168,5 +167,5 @@ class BaseEstimator(object):
         """Save (additional) class-specific parameters."""
         raise NotImplementedError()
 
-    def save(self, filename=None, **json_params):
-        save_model(self, filename, **json_params)
+    def save(self, filename=None, params_mask={}, json_params={}):
+        save_model(self, filename, params_mask, json_params)

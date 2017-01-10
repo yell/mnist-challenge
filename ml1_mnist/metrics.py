@@ -8,14 +8,14 @@ except ImportError:
     pass
 
 
-def accuracy_score(y_true, y_pred, normalize=True):
+def accuracy_score(y_actual, y_predicted, normalize=True):
     """Accuracy classification score.
 
     Parameters
     ----------
-    y_true : (n_samples, n_outputs) array-like
+    y_actual : (n_samples, n_outputs) array-like
         Ground truth (correct) labels.
-    y_pred : (n_samples, n_outputs) array-like
+    y_predicted : (n_samples, n_outputs) array-like
         Predicted labels, as returned by a classifier.
     normalize : bool, optional
         If False, return the number of correctly classified samples.
@@ -28,22 +28,22 @@ def accuracy_score(y_true, y_pred, normalize=True):
         samples (float), else return the number of correctly
         classified samples (int).
     """
-    if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
-    if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
-    score = sum(np.all(t == p) for t, p in zip(y_true, y_pred))
+    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
+    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    score = sum(np.all(a == p) for a, p in zip(y_actual, y_predicted))
     if normalize:
-        score /= float(len(y_true))
+        score /= float(len(y_actual))
     return score
 
 
-def zero_one_loss(y_true, y_pred, normalize=True):
+def zero_one_loss(y_actual, y_predicted, normalize=True):
     """Zero-one classification loss.
 
     Parameters
     ----------
-    y_true : (n_samples, n_outputs) array-like
+    y_actual : (n_samples, n_outputs) array-like
         Ground truth (correct) labels.
-    y_pred : (n_samples, n_outputs) array-like
+    y_predicted : (n_samples, n_outputs) array-like
         Predicted labels, as returned by a classifier.
     normalize : bool, optional
         If False, return number of misclassifications.
@@ -56,15 +56,15 @@ def zero_one_loss(y_true, y_pred, normalize=True):
         misclassifications (float), else it returns
         the number of misclassifications (int).
     """
-    if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
-    if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
-    loss = sum(np.any(t != p) for t, p in zip(y_true, y_pred))
+    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
+    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    loss = sum(np.any(a != p) for a, p in zip(y_actual, y_predicted))
     if normalize:
-        loss /= float(len(y_true))
+        loss /= float(len(y_actual))
     return loss
 
 
-def confusion_matrix(y_true, y_pred, labels=None, normalize=None):
+def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
     """Compute confusion matrix.
 
     By definition a confusion matrix C is such that C_{i, j}
@@ -72,25 +72,27 @@ def confusion_matrix(y_true, y_pred, labels=None, normalize=None):
     but predicted to be in group j.
 
     Thus in binary classification, the count of
-     true negatives is C_{0,0},
-    false negatives is C_{1,0},
-     true positives is C_{1,1} and
-    false positives is C_{0,1}.
+     true negatives is C_{0, 0},
+    false negatives is C_{1, 0},
+     true positives is C_{1, 1} and
+    false positives is C_{0, 1}.
 
     Notes
     -----
-    Only `n_outputs` = 1 case is supported for now.
+    Only `n_outputs` = 1 case is supported (for now).
+    For multi-output case (e.g. one-hot encoding) one may map
+    labels to one-dimensional labels.
 
     Parameters
     ----------
-    y_true : (n_samples,) array-like
+    y_actual : (n_samples,) array-like
         Ground truth (correct) labels.
-    y_pred : (n_samples,) array-like
+    y_predicted : (n_samples,) array-like
         Predicted labels, as returned by a classifier.
     labels : (n_classes,) array-like
         List of labels to index the matrix. If no `labels`
         are provided, they are assumed to be [0, 1, ..., N],
-        where N is max(max(`y_true`), max(`y_pred`)).
+        where N is max(max(`y_actual`), max(`y_predicted`)).
     normalize : None or {'rows', 'cols'}, optional
         Whether to normalize confusion matrix.
         If `normalize` == 'rows', normalize c.m. to have rows summed to 1,
@@ -105,35 +107,35 @@ def confusion_matrix(y_true, y_pred, labels=None, normalize=None):
 
     Examples
     --------
-    >>> y_true = [2, 0, 2, 2, 0, 1]
-    >>> y_pred = [0, 0, 2, 2, 0, 2]
-    >>> confusion_matrix(y_true, y_pred)
+    >>> y_actual = [2, 0, 2, 2, 0, 1]
+    >>> y_predicted = [0, 0, 2, 2, 0, 2]
+    >>> confusion_matrix(y_actual, y_predicted)
     array([[2, 0, 0],
            [0, 0, 1],
            [1, 0, 2]])
-    >>> confusion_matrix(y_true, y_pred, labels=[0, 2])
+    >>> confusion_matrix(y_actual, y_predicted, labels=[0, 2])
     array([[2, 0],
            [1, 2]])
-    >>> confusion_matrix(y_true, y_pred, labels=range(4))
+    >>> confusion_matrix(y_actual, y_predicted, labels=range(4))
     array([[2, 0, 0, 0],
            [0, 0, 1, 0],
            [1, 0, 2, 0],
            [0, 0, 0, 0]])
-    >>> confusion_matrix(y_true, y_pred, normalize='rows')
+    >>> confusion_matrix(y_actual, y_predicted, normalize='rows')
     array([[ 1.        ,  0.        ,  0.        ],
            [ 0.        ,  0.        ,  1.        ],
            [ 0.33333333,  0.        ,  0.66666667]])
-    >>> confusion_matrix(y_true, y_pred, normalize='cols')
+    >>> confusion_matrix(y_actual, y_predicted, normalize='cols')
     array([[ 0.66666667,  0.        ,  0.        ],
            [ 0.        ,  0.        ,  0.33333333],
            [ 0.33333333,  0.        ,  0.66666667]])
     """
-    if not isinstance(y_true, np.ndarray): y_true = np.array(y_true)
-    if not isinstance(y_pred, np.ndarray): y_pred = np.array(y_pred)
-    labels = labels or range(max(max(y_true), max(y_pred)) + 1)
+    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
+    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    labels = labels or range(max(max(y_actual), max(y_predicted)) + 1)
 
     C = np.zeros((len(labels), len(labels)), dtype=np.int)
-    for t, p in zip(y_true, y_pred):
+    for t, p in zip(y_actual, y_predicted):
         if t in labels and p in labels:
             C[labels.index(t)][labels.index(p)] += 1
 
@@ -187,5 +189,5 @@ misclassification_rate = zero_one_loss
 if __name__ == '__main__':
     # run corresponding tests
     import test_metrics as t
-    import env; from utils.testing import run_tests
+    from utils.testing import run_tests
     run_tests(__file__, t)

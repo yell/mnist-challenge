@@ -1,7 +1,8 @@
-import numpy as np
 from nose.tools import assert_raises
 
-from _metrics import accuracy_score, zero_one_loss
+import numpy as np
+
+from ml1_mnist.metrics import accuracy_score, zero_one_loss
 
 
 class TestAccuracyScore(object):
