@@ -1,7 +1,7 @@
 import numpy as np
 from unittest import skip
 
-import env; from model_selection import TrainTestSplitter as TTS
+from model_selection import TrainTestSplitter as TTS
 
 
 class TestSplit(object):
@@ -82,9 +82,7 @@ class TestSplit(object):
                             np.testing.assert_allclose(test1, test1)
 
     def test_split_stratification_no_shuffle(self):
-        """
-        Ensure stratification is preserved if no shuffle.
-        """
+        """Ensure stratification is preserved if no shuffle."""
         tts = TTS(shuffle=False)
         train, test = tts.split(self.y, train_ratio=4./7., stratify=True)
         assert np.count_nonzero(train == 1) ==\
@@ -93,9 +91,7 @@ class TestSplit(object):
                np.count_nonzero(test == 2) == np.count_nonzero(test == 3)
 
     def test_split_stratification_random(self):
-        """
-        Ensure stratification is preserved even with shuffling.
-        """
+        """Ensure stratification is preserved even with shuffling."""
         for random_seed in np.random.randint(0, 1337, 100):
             tts = TTS(shuffle=True, random_seed=random_seed)
             train, test = tts.split(self.y, train_ratio=4./7., stratify=True)
@@ -106,49 +102,20 @@ class TestSplit(object):
 
 
     def test_make_k_folds_no_shuffle(self):
-        """
-        Ensure order is preserved if no shuffle (for different number of folds).
-        """
+        """Ensure order is preserved if no shuffle (for different number of folds)."""
         for n_folds in xrange(2, 100):
             tts = TTS(shuffle=False)
             folds = list(tts.make_k_folds(self.y, n_folds=n_folds, stratify=False))
             np.testing.assert_allclose(np.arange(len(self.y)), np.concatenate(folds))
 
-    def test_make_2_folds_split_no_shuffle(self):
-        """
-        Ensure making 2 folds is equivalent to splitting 50:50 (w/o shuffling).
-        """
-        for stratify in (False, True):
-            tts = TTS(shuffle=False)
-            train, test = tts.split(self.y, train_ratio=0.5, stratify=stratify)
-            fold1, fold2 = tts.make_k_folds(self.y, n_folds=2, stratify=stratify)
-            np.testing.assert_allclose(train, fold1)
-            np.testing.assert_allclose(test, fold2)
-
-    def test_make_2_folds_split(self):
-        """
-        Ensure making 2 folds is equivalent to splitting 50:50 (even with shuffling).
-        """
-        for random_seed in np.random.randint(0, 1337, 100):
-            for stratify in (False,):
-                tts = TTS(shuffle=True, random_seed=random_seed)
-                train, test = tts.split(self.y, train_ratio=0.5, stratify=stratify)
-                fold1, fold2 = tts.make_k_folds(self.y, n_folds=2, stratify=stratify)
-                np.testing.assert_allclose(train, fold1)
-                np.testing.assert_allclose(test, fold2)
-
     def test_make_k_folds_stratification_no_shuffle(self):
-        """
-        Ensure stratification is preserved if no shuffle.
-        """
+        """Ensure stratification is preserved if no shuffle."""
         tts = TTS(shuffle=False)
         for fold in tts.make_k_folds(self.y, n_folds=7, stratify=True):
             np.testing.assert_allclose(np.sort(self.y[fold]), np.array([1, 2, 3]))
 
     def test_make_k_folds_stratification_random(self):
-        """
-        Ensure stratification is preserved even with shuffling.
-        """
+        """Ensure stratification is preserved even with shuffling."""
         for random_seed in np.random.randint(0, 1337, 100):
             tts = TTS(shuffle=True, random_seed=random_seed)
             for fold in tts.make_k_folds(self.y, n_folds=7, stratify=True):

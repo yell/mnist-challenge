@@ -1,21 +1,71 @@
 import numpy as np
 
-import env; from utils import RNG
+from utils import RNG
 
 
 class TrainTestSplitter(object):
+    """
+    A generic class for splitting data into (random) subsets.
 
+    Parameters
+    ----------
+    shuffle : bool, optional
+        Whether to shuffle the data.
+    random_seed : None or int, optional
+        Pseudo-random number generator seed used for random sampling.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> y = np.array([1, 1, 2, 2, 3, 3, 3])
+
+    >>> tts1 = TrainTestSplitter(shuffle=False)
+    >>> train, test = tts1.split(y, train_ratio=0.5)
+    >>> print y[train], y[test]
+    [1 1 2] [2 3 3 3]
+    >>> train, test = tts1.split(y, train_ratio=0.5, stratify=True)
+    >>> print y[train], y[test]
+    [1 2 3] [1 2 3 3]
+    >>> for fold in tts1.make_k_folds(y, n_folds=3):
+    ...     print y[fold]
+    [1 1 2]
+    [2 3]
+    [3 3]
+    >>> for fold in tts1.make_k_folds(y, n_folds=3, stratify=True):
+    ...     print y[fold]
+    [1 2 3]
+    [1 2 3]
+    [3]
+    >>> for train, test in tts1.k_fold_split(y, n_folds=3):
+    ...     print y[train], y[test]
+    [2 3 3 3] [1 1 2]
+    [1 1 2 3 3] [2 3]
+    [1 1 2 2 3] [3 3]
+    >>> for train, test in tts1.k_fold_split(y, n_folds=3, stratify=True):
+    ...     print y[train], y[test]
+    [1 2 3 3] [1 2 3]
+    [1 2 3 3] [1 2 3]
+    [1 2 3 1 2 3] [3]
+
+    >>> tts2 = TrainTestSplitter(shuffle=True, random_seed=1337)
+    >>> train, test = tts2.split(y, train_ratio=0.5)
+    >>> print y[train], y[test]
+    [3 2 1] [2 1 3 3]
+    >>> train, test = tts2.split(y, train_ratio=0.5, stratify=True)
+    >>> print y[train], y[test]
+    [3 1 2] [3 3 2 1]
+    >>> for fold in tts2.make_k_folds(y, n_folds=3):
+    ...     print y[fold]
+    [3 2 1]
+    [2 1]
+    [3 3]
+    >>> for fold in tts2.make_k_folds(y, n_folds=3, stratify=True):
+    ...     print y[fold]
+    [3 1 2]
+    [3 2 1]
+    [3]
+    """
     def __init__(self, shuffle=False, random_seed=None):
-        """
-        A generic class for splitting data into (random) subsets.
-
-        Parameters
-        ----------
-        shuffle : bool, optional
-            Whether to shuffle the data.
-        random_seed : None or int, optional
-    |      Pseudo-random number generator seed used for random sampling.
-        """
         self.shuffle = shuffle
         self.random_seed = random_seed
         self.rng = RNG(self.random_seed)
@@ -47,20 +97,19 @@ class TrainTestSplitter(object):
         if not stratify:
             indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=np.int)
             train_size = int(train_ratio * n)
-            return indices[:train_size], indices[train_size:]
+            return np.split(indices, (train_size,))
 
         # group indices by label
         labels_indices = {}
         for index, label in enumerate(y):
-            if not label in labels_indices:
-                labels_indices[label] = []
+            if not label in labels_indices: labels_indices[label] = []
             labels_indices[label].append(index)
 
         train, test = np.empty(0, dtype=np.int), np.empty(0, dtype=np.int)
-        for label, indices in labels_indices.items():
+        for label, indices in sorted(labels_indices.items()):
             size = int(train_ratio * len(indices))
-            train = np.append(train, labels_indices[label][:size])
-            test = np.append(test, labels_indices[label][size:])
+            train = np.append(train, indices[:size])
+            test  = np.append( test, indices[size:])
 
         if self.shuffle:
             self.rng.shuffle(train)
@@ -93,12 +142,7 @@ class TrainTestSplitter(object):
 
         if not stratify:
             indices = self.rng.permutation(n) if self.shuffle else np.arange(n, dtype=np.int)
-            fold_size = n / n_folds
-            for k in xrange(n_folds):
-                if k < n_folds - 1:
-                    fold = indices[(k * fold_size):((k + 1) * fold_size)]
-                else:
-                    fold = indices[(k * fold_size):]
+            for fold in np.array_split(indices, n_folds):
                 yield fold
             return
 
@@ -109,18 +153,15 @@ class TrainTestSplitter(object):
                 labels_indices[label] = []
             labels_indices[label].append(index)
 
-        for k in xrange(n_folds):
-            fold = np.empty(0, dtype=np.int)
-            for label, indices in labels_indices.items():
-                size = len(indices) / n_folds
-                if k != n_folds - 1:
-                    fold = np.append(fold, indices[(k * size):((k + 1) * size)])
-                else:
-                    fold = np.append(fold, indices[(k * size):])
+        # split all indices label-wisely
+        for label, indices in sorted(labels_indices.items()):
+            labels_indices[label] = np.array_split(indices, n_folds)
 
+        # collect respective splits into folds and shuffle if needed
+        for k in xrange(n_folds):
+            fold = np.concatenate([indices[k] for _, indices in sorted(labels_indices.items())])
             if self.shuffle:
                 self.rng.shuffle(fold)
-
             yield fold
 
     def k_fold_split(self, y, n_folds=3, stratify=False):
@@ -152,6 +193,6 @@ class TrainTestSplitter(object):
 
 if __name__ == '__main__':
     # run corresponding tests
-    import tests.test_model_selection as t
-    from testing import run_tests
+    import test_model_selection as t
+    from utils.testing import run_tests
     run_tests(__file__, t)
