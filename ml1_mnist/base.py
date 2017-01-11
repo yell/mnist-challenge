@@ -3,7 +3,9 @@ import os.path
 import numpy as np
 from copy import deepcopy
 
-from utils import import_trace
+from utils import (import_trace,
+                   pformat,
+                   is_param_or_attribute_name)
 from utils.read_write import save_model
 
 
@@ -91,26 +93,23 @@ class BaseEstimator(object):
             raise ValueError('`fit` must be called before calling `predict`')
 
     def get_params(self, deep=True, **params_mask):
-        """Get parameters and attributes of the model.
-
-        # add model name (including import trace)
+        """Get parameters (and attributes) of the model.
 
         Parameters
         ----------
         deep : bool, optional
-            Whether to deepcopy all the attributes.
+            Whether to deepcopy all the parameters.
         params_mask : kwargs, optional
-            Enables to control which attributes to include/exclude.
-            If some attributes set to True, return only them.
-            If some attributes set to False, return all excluding them.
-            If there are mixed attributes, ValueError is raised.
+            Enables to control which parameters to include/exclude.
+            If some parameters set to True, return only them.
+            If some parameters set to False, return all excluding them.
+            If there are mixed parameters, ValueError is raised.
 
         Returns
         -------
         params : dict
-            Parameters of the model. Includes all attributes (members,
-            not methods), that not start with underscore ("_") and also model
-            name being class name stored in 'model' parameter.
+            Parameters of the model. Includes all members (not methods)
+            and also model name being class name stored as 'model'.
         """
         if all(x in map(bool, params_mask.values()) for x in (False, True)):
             raise ValueError('`params_mask` cannot contain True and False values simultaneously')
@@ -119,7 +118,7 @@ class BaseEstimator(object):
         params = vars(self)
 
         # omit "interesting" members
-        params = {key: params[key] for key in params if not key.startswith('_')}
+        params = {key: params[key] for key in params if is_param_or_attribute_name(key)}
 
         # filter according to the mask provided
         if params_mask:
@@ -143,7 +142,7 @@ class BaseEstimator(object):
         return params
 
     def set_params(self, **params):
-        """Set parameters and attributes of the model.
+        """Set parameters (and attributes) of the model.
 
         Parameters
         ----------
@@ -155,7 +154,7 @@ class BaseEstimator(object):
         self
         """
         for key, value in params.items():
-            if not key.startswith('_') and hasattr(self, key):
+            if is_param_or_attribute_name(key) and hasattr(self, key):
                 setattr(self, key, value)
         return self
 
@@ -169,3 +168,10 @@ class BaseEstimator(object):
 
     def save(self, filename=None, params_mask={}, json_params={}):
         save_model(self, filename, params_mask, json_params)
+
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        params = self.get_params(deep=False)
+        del params['model']
+        return "{0}({1})".format(class_name,
+                                 pformat(params, offset=len(class_name)))

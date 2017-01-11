@@ -1,6 +1,3 @@
-# TODO: find the way to keep this file named 'io'.
-# TODO json <-> utf-8 or w/o:
-# http://stackoverflow.com/questions/2835559/parsing-values-from-a-json-file
 import json
 import importlib
 
