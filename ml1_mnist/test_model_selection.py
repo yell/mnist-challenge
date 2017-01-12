@@ -6,7 +6,7 @@ from model_selection import TrainTestSplitter as TTS
 
 class TestSplit(object):
     def setUp(self):
-        self.y = np.array([1, 1, 1, 2, 2, 3, 3,
+        self.y = np.asarray([1, 1, 1, 2, 2, 3, 3,
                            1, 1, 2, 2, 2, 3, 3,
                            1, 1, 2, 2, 3, 3, 3])
 
@@ -25,20 +25,20 @@ class TestSplit(object):
         """
         for random_seed, stratify, (train_ref, test_ref) in (
             (42, False, (
-                    np.array([6, 8, 9, 15, 7, 3, 17, 14, 11, 16]),
-                    np.array([2, 19, 18, 1, 20, 10, 12, 4, 5, 0, 13])
+                    np.asarray([6, 8, 9, 15, 7, 3, 17, 14, 11, 16]),
+                    np.asarray([2, 19, 18, 1, 20, 10, 12, 4, 5, 0, 13])
             )),
             (1337, False, (
-                np.array([ 8, 20,  9, 18,  1,  4,  0,  7, 14, 16]),
-                np.array([17,  3, 15, 11,  5, 13,  2, 19,  6, 10, 12])
+                np.asarray([ 8, 20,  9, 18,  1,  4,  0,  7, 14, 16]),
+                np.asarray([17,  3, 15, 11,  5, 13,  2, 19,  6, 10, 12])
             )),
             (42, True, (
-                    np.array([12, 6, 4, 2, 3, 5, 1, 0, 9]),
-                    np.array([20, 13, 16, 17, 18, 15, 8, 19, 10, 14, 7, 11])
+                    np.asarray([12, 6, 4, 2, 3, 5, 1, 0, 9]),
+                    np.asarray([20, 13, 16, 17, 18, 15, 8, 19, 10, 14, 7, 11])
             )),
             (1337, True, (
-                    np.array([6, 5, 1, 12, 0, 3, 2, 4, 9]),
-                    np.array([14, 19, 17, 13, 10, 7, 16, 11, 8, 18, 15, 20])
+                    np.asarray([6, 5, 1, 12, 0, 3, 2, 4, 9]),
+                    np.asarray([14, 19, 17, 13, 10, 7, 16, 11, 8, 18, 15, 20])
             )),
         ):
             tts = TTS(shuffle=True, random_seed=random_seed)
@@ -112,11 +112,11 @@ class TestSplit(object):
         """Ensure stratification is preserved if no shuffle."""
         tts = TTS(shuffle=False)
         for fold in tts.make_k_folds(self.y, n_folds=7, stratify=True):
-            np.testing.assert_allclose(np.sort(self.y[fold]), np.array([1, 2, 3]))
+            np.testing.assert_allclose(np.sort(self.y[fold]), np.asarray([1, 2, 3]))
 
     def test_make_k_folds_stratification_random(self):
         """Ensure stratification is preserved even with shuffling."""
         for random_seed in np.random.randint(0, 1337, 100):
             tts = TTS(shuffle=True, random_seed=random_seed)
             for fold in tts.make_k_folds(self.y, n_folds=7, stratify=True):
-                np.testing.assert_allclose(np.sort(self.y[fold]), np.array([1, 2, 3]))
+                np.testing.assert_allclose(np.sort(self.y[fold]), np.asarray([1, 2, 3]))

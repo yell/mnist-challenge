@@ -38,7 +38,7 @@ class BaseEstimator(object):
         """
         # validate `X`
         if not isinstance(X, np.ndarray):
-            X = np.array(X)
+            X = np.asarray(X)
 
         if X.size == 0:
             raise ValueError('number of features must be > 0')
@@ -54,7 +54,7 @@ class BaseEstimator(object):
                 raise ValueError('missed required argument `y`')
 
             if not isinstance(y, np.ndarray):
-                y = np.array(y)
+                y = np.asarray(y)
 
             if y.size == 0:
                 raise ValueError('number of outputs must be > 0')
@@ -75,8 +75,9 @@ class BaseEstimator(object):
     def fit(self, X, y=None, **fit_params):
         """Fit the model according to the given training data."""
         self._check_X_y(X, y)
-        self._fit(X, y, **fit_params)
+        self._fit(self._X, self._y, **fit_params)
         self._called_fit = True
+        return self
 
     def _predict(self, X=None, **predict_params):
         """Class-specific `predict` routine."""
@@ -85,7 +86,7 @@ class BaseEstimator(object):
     def predict(self, X=None, **predict_params):
         """Predict the target for the provided data."""
         if not isinstance(X, np.ndarray):
-            X = np.array(X)
+            X = np.asarray(X)
 
         if self._called_fit:
             return self._predict(X, **predict_params)

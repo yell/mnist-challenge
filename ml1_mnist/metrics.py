@@ -28,8 +28,10 @@ def accuracy_score(y_actual, y_predicted, normalize=True):
         samples (float), else return the number of correctly
         classified samples (int).
     """
-    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
-    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    if not isinstance(y_actual, np.ndarray):
+        y_actual = np.asarray(y_actual)
+    if not isinstance(y_predicted, np.ndarray):
+        y_predicted = np.asarray(y_predicted)
     score = sum(np.all(a == p) for a, p in zip(y_actual, y_predicted))
     if normalize:
         score /= float(len(y_actual))
@@ -56,8 +58,10 @@ def zero_one_loss(y_actual, y_predicted, normalize=True):
         misclassifications (float), else it returns
         the number of misclassifications (int).
     """
-    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
-    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    if not isinstance(y_actual, np.ndarray):
+        y_actual = np.asarray(y_actual)
+    if not isinstance(y_predicted, np.ndarray):
+        y_predicted = np.asarray(y_predicted)
     loss = sum(np.any(a != p) for a, p in zip(y_actual, y_predicted))
     if normalize:
         loss /= float(len(y_actual))
@@ -102,7 +106,7 @@ def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
 
     Returns
     -------
-    C : (n_classes, n_classes) ndarray
+    C : (n_classes, n_classes) np.ndarray
         Confusion matrix.
 
     Examples
@@ -130,8 +134,10 @@ def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
            [ 0.        ,  0.        ,  0.33333333],
            [ 0.33333333,  0.        ,  0.66666667]])
     """
-    if not isinstance(y_actual, np.ndarray): y_actual = np.array(y_actual)
-    if not isinstance(y_predicted, np.ndarray): y_predicted = np.array(y_predicted)
+    if not isinstance(y_actual, np.ndarray):
+        y_actual = np.asarray(y_actual)
+    if not isinstance(y_predicted, np.ndarray):
+        y_predicted = np.asarray(y_predicted)
     labels = labels or range(max(max(y_actual), max(y_predicted)) + 1)
 
     C = np.zeros((len(labels), len(labels)), dtype=np.int)

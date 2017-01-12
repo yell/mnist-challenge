@@ -17,7 +17,7 @@ class TrainTestSplitter(object):
     Examples
     --------
     >>> import numpy as np
-    >>> y = np.array([1, 1, 2, 2, 3, 3, 3])
+    >>> y = np.asarray([1, 1, 2, 2, 3, 3, 3])
 
     >>> tts1 = TrainTestSplitter(shuffle=False)
     >>> train, test = tts1.split(y, train_ratio=0.5)
@@ -86,9 +86,9 @@ class TrainTestSplitter(object):
 
         Returns
         -------
-        train : (n_train,) ndarray
+        train : (n_train,) np.ndarray
             The training set indices for that split.
-        test : (n_samples - n_train,) ndarray
+        test : (n_samples - n_train,) np.ndarray
             The testing set indices for that split.
         """
         self.rng.reseed()
@@ -105,11 +105,11 @@ class TrainTestSplitter(object):
             if not label in labels_indices: labels_indices[label] = []
             labels_indices[label].append(index)
 
-        train, test = np.empty(0, dtype=np.int), np.empty(0, dtype=np.int)
+        train, test = np.asarray([], dtype=np.int), np.asarray([], dtype=np.int)
         for label, indices in sorted(labels_indices.items()):
             size = int(train_ratio * len(indices))
-            train = np.append(train, indices[:size])
-            test  = np.append( test, indices[size:])
+            train = np.concatenate((train, indices[:size]))
+            test  = np.concatenate(( test, indices[size:]))
 
         if self.shuffle:
             self.rng.shuffle(train)
@@ -134,7 +134,7 @@ class TrainTestSplitter(object):
 
         Yields
         ------
-        fold : ndarray
+        fold : np.ndarray
             Indices for current fold.
         """
         self.rng.reseed()
@@ -181,9 +181,9 @@ class TrainTestSplitter(object):
 
         Yields
         ------
-        train : (n_train,) ndarray
+        train : (n_train,) np.ndarray
             The training set indices for current split.
-        test : (n_samples - n_train,) ndarray
+        test : (n_samples - n_train,) np.ndarray
             The testing set indices for current split.
         """
         folds = list(self.make_k_folds(y, n_folds=n_folds, stratify=stratify))

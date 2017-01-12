@@ -15,6 +15,10 @@ def load_model(filepath=None):
     with open(filepath) as f:
         params = json.load(f)
 
+    # get rid of ugly unicode
+    to_str = lambda x: str(x) if isinstance(x, unicode) else x
+    params = dict(zip(params.keys(), map(to_str, params.values())))
+
     if not 'model' in params:
         raise ValueError("missed required field: 'model'")
     model_path = params['model']

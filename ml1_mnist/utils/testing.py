@@ -1,7 +1,4 @@
-try:
-    import nose
-except ImportError:
-    pass
+import nose
 
 
 @nose.tools.nottest
