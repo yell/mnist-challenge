@@ -3,7 +3,7 @@ import numpy as np
 import numpy.ma as ma
 from itertools import product
 
-from utils import RNG
+from utils import RNG, Stopwatch
 from metrics import zero_one_loss
 
 
@@ -40,12 +40,12 @@ class TrainTestSplitter(object):
     [1 2 3]
     [1 2 3]
     [3]
-    >>> for train, test in tts1.k_fold_split(y, n_folds=3):
+    >>> for train, test in tts1.k_fold_split(y, n_splits=3):
     ...     print y[train], y[test]
     [2 3 3 3] [1 1 2]
     [1 1 2 3 3] [2 3]
     [1 1 2 2 3] [3 3]
-    >>> for train, test in tts1.k_fold_split(y, n_folds=3, stratify=True):
+    >>> for train, test in tts1.k_fold_split(y, n_splits=3, stratify=True):
     ...     print y[train], y[test]
     [1 2 3 3] [1 2 3]
     [1 2 3 3] [1 2 3]
@@ -255,7 +255,8 @@ class GridSearchCV(object):
     ...                'gamma': [0.01, 0.1]})
     >>> param_order = (['weights', 'p'],
     ...                None)
-    >>> grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, param_order=param_order)
+    >>> grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, param_order=param_order,
+    ...                        save_models=False, verbose=False)
     >>> for params in grid_cv.gen_params():
     ...     print params # note the order
     {'p': 1.0, 'k': 2, 'weights': 'uniform'}
@@ -294,24 +295,38 @@ class GridSearchCV(object):
     >>> grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, n_splits=2,
     ...                        refit=False, save_models=False ,verbose=False)
     >>> grid_cv.fit(X, y) # doctest: +ELLIPSIS
-    <model_selection.GridSearchCV object at 0x...>
+    <...model_selection.GridSearchCV object at 0x...>
+    >>> grid_cv.best_index_
+    1
     >>> grid_cv.best_loss_
     0.0
     >>> grid_cv.best_params_
     {'k': 2, 'weights': 'distance'}
+    >>> grid_cv.best_model_ # doctest: +ELLIPSIS
+    KNNClassifier(algorithm='kd_tree', degree=3, gamma='auto', k=2,
+           kd_tree_=<scipy.spatial.ckdtree.cKDTree object at 0x...>,
+           kernel=None, leaf_size=30, p=inf, weights='uniform')
     >>> for k, v in sorted(grid_cv.cv_results_.items()):
-    ...     print k, ":", " ".join(map(str, v)) # doctest: +ELLIPSIS
-    mean_loss : 0.25 0.0 0.625 0.125 0.375 0.25
-    param_k : 2.0 2.0 3.0 3.0 2.0 2.0
-    param_p : -- -- -- -- 1.0 inf
-    param_weights : uniform distance uniform distance -- --
-    params : {'k': 2, 'weights': 'uniform'} {'k': 2, 'weights': 'distance'} {...} {...} {...} {...}
-    split0_loss : 0.25 0.0 0.75 0.0 0.5 0.25
-    split1_loss : 0.25 0.0 0.5 0.25 0.25 0.25
-    std_loss : 0.0 0.0 0.125 0.125 0.125 0.0
+    ...     print k, ":", v # doctest: +ELLIPSIS
+    mean_loss : [ 0.25   0.     0.625  0.125  0.375  0.25 ]
+    param_k : [ 2.  2.  3.  3.  2.  2.]
+    param_p : [-- -- -- -- 1.0 inf]
+    param_weights : ['uniform' 'distance' 'uniform' 'distance' -- --]
+    params : [{'k': 2, 'weights': 'uniform'} {'k': 2, 'weights': 'distance'}
+     {'k': 3, 'weights': 'uniform'} {'k': 3, 'weights': 'distance'}
+     {'p': 1.0, 'k': 2} {'p': inf, 'k': 2}]
+    split0_loss : [ 0.25  0.    0.75  0.    0.5   0.25]
+    split0_test_time : [ 0.00...  0.00...  0.00...  0.00...  0.00...  0.00...]
+    split0_train_time : [  ...   0.00000000e+00   0.00000000e+00   0.00000000e+00
+       0.00000000e+00   0.00000000e+00]
+    split1_loss : [ 0.25  0.    0.5   0.25  0.25  0.25]
+    split1_test_time : [...]
+    split1_train_time : [  ...   0.00000000e+00   0.00000000e+00   0.00000000e+00
+       0.00000000e+00   0.00000000e+00]
+    std_loss : [ 0.     0.     0.125  0.125  0.125  0.   ]
     """
     def __init__(self, model, param_grid, param_order=None, train_test_splitter_params={},
-                 n_splits=3, loss=zero_one_loss, refit=True, save_models=True, dirpath='.', save_params={},
+                 n_splits=3, loss=zero_one_loss, refit=True, save_models=False, dirpath='.', save_params={},
                  verbose=True):
 
         self.model = model
@@ -393,6 +408,8 @@ class GridSearchCV(object):
         self.cv_results_['params'] = []
         for k in xrange(self.n_splits):
             self.cv_results_['split{0}_loss'.format(k)] = []
+            self.cv_results_['split{0}_train_time'.format(k)] = []
+            self.cv_results_['split{0}_test_time'.format(k)] = []
         for param_name in unique_params:
             self.cv_results_['param_{0}'.format(param_name)] = ma.array([])
 
@@ -415,12 +432,16 @@ class GridSearchCV(object):
                 for split_index, (train, test) in enumerate(tts.k_fold_split(y, n_splits=self.n_splits,
                                                                             stratify=True)):
                     # fit and evaluate
-                    y_pred = self.model.fit(X[train], y[train]).predict(X[test])
+                    with Stopwatch(verbose=False) as s:
+                        self.model.fit(X[train], y[train])
+                    self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed_time)
+                    with Stopwatch(verbose=False) as s:
+                        y_pred = self.model.predict(X[test])
+                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed_time)
                     loss = self.loss(y[test], y_pred)
                     splits_losses.append(loss)
                     # add loss to `cv_results_`
-                    cv_key = 'split{0}_loss'.format(split_index)
-                    self.cv_results_[cv_key].append(loss)
+                    self.cv_results_['split{0}_loss'.format(split_index)].append(loss)
 
                 # compute mean and std loss
                 splits_losses = np.asarray(splits_losses)
@@ -442,8 +463,9 @@ class GridSearchCV(object):
             # of params
             for split_index, (train, test) in enumerate(tts.k_fold_split(y, n_splits=self.n_splits,
                                                                          stratify=True)):
-                # fit model
-                self.model.fit(X[train], y[train])
+                # fit model (only once per split)
+                with Stopwatch(verbose=False) as s:
+                    self.model.fit(X[train], y[train])
 
                 for params_index, params in enumerate(self.gen_params()):
                     # set params
@@ -457,8 +479,15 @@ class GridSearchCV(object):
                             to_concat = ma.array([params.get(param_name, None)], mask=mask)
                             self.cv_results_[cv_key] = ma.concatenate((self.cv_results_[cv_key],
                                                                        to_concat))
+                    # write training time
+                    if params_index == 0:
+                        self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed_time)
+                    else:
+                        self.cv_results_['split{0}_train_time'.format(split_index)].append(0.)
                     # evaluate
-                    y_pred = self.model.predict(X[test])
+                    with Stopwatch(verbose=False) as s:
+                        y_pred = self.model.predict(X[test])
+                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed_time)
                     loss = self.loss(y[test], y_pred)
                     # add loss to `cv_results_`
                     cv_key = 'split{0}_loss'.format(split_index)
@@ -478,11 +507,13 @@ class GridSearchCV(object):
                             self.best_loss_ = mean_loss
                             self.best_params_ = params
                             self.best_model_ = self.model
-                            self.best_model_.save(filepath=os.path.join(self.dirpath, self._best_model_name()),
-                                                  **self.save_params)
+                            if self.save_models:
+                                self.best_model_.save(filepath=os.path.join(self.dirpath, self._best_model_name()),
+                                                      **self.save_params)
         # convert lists to np.ndarray
         for key in (['mean_loss', 'std_loss', 'params'] +
-                    ['split{0}_loss'.format(k) for k in xrange(self.n_splits)]):
+                    ['split{0}_{1}'.format(k, s) for k in xrange(self.n_splits)
+                     for s in ('loss', 'train_time', 'test_time')]):
             self.cv_results_[key] = np.asarray(self.cv_results_[key])
         return self
 

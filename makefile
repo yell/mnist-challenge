@@ -1,5 +1,6 @@
 test:
 	nosetests
+	rm -rf 'knn.json'
 
 clean:
 	find . -name '*.pyc' -type f -delete
