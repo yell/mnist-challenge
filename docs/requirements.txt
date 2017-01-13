@@ -2,4 +2,5 @@ numpy
 scipy
 matplotlib # optional, for visualization
 seaborn # optional, for visualization
+pandas # optional, for CV results manipulation
 nose # optional, for testing

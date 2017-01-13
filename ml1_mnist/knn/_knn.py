@@ -83,7 +83,7 @@ class KNNClassifier(BaseEstimator):
     >>> from utils.read_write import load_model
 
     # this saves state of k-d tree as well, so it won't be constructed again
-    >>> knn2.save(filename='knn.json', json_params=dict(indent=4))
+    >>> knn2.save(filepath='knn.json', json_params=dict(indent=4))
 
     # `.fit` need to be called attach & validate inputs and
     # this won't build k-d tree again neither!

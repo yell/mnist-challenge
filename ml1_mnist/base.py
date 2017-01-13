@@ -188,8 +188,8 @@ class BaseEstimator(object):
         """Class-specific parameters deserialization routine."""
         return params
 
-    def save(self, filename=None, params_mask={}, json_params={}):
-        save_model(self, filename, params_mask, json_params)
+    def save(self, filepath=None, params_mask={}, json_params={}):
+        save_model(self, filepath, params_mask, json_params)
 
     def __repr__(self):
         class_name = self.__class__.__name__
