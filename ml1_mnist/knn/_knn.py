@@ -157,7 +157,7 @@ class KNNClassifier(BaseEstimator):
 
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
-        indices, distances = np.asarray([]), np.asarray([])
+        indices, distances = np.array([]), np.array([])
         for x in X:
             indices_x, distances_x = self._k_neighbors_x(x, k)
             indices = np.concatenate((indices, indices_x))

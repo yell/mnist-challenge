@@ -33,7 +33,7 @@ class TestAccuracyScore(object):
         assert accuracy_score(y_true, y_pred, normalize=False) == 3
 
     def test_multilabel_not_equal(self):
-        y_true, y_pred = np.asarray([[0, 1], [1, 1], [0, 0]]), np.ones((3, 2))
+        y_true, y_pred = np.array([[0, 1], [1, 1], [0, 0]]), np.ones((3, 2))
         np.testing.assert_almost_equal(1./3., accuracy_score(y_true, y_pred))
         assert accuracy_score(y_true, y_pred, normalize=False) == 1
 
@@ -70,7 +70,7 @@ class TestZeroOneLoss(object):
         assert zero_one_loss(y_true, y_pred, normalize=False) == 0
 
     def test_multilabel_not_equal(self):
-        y_true, y_pred = np.asarray([[0, 1], [1, 1], [0, 0]]), np.ones((3, 2))
+        y_true, y_pred = np.array([[0, 1], [1, 1], [0, 0]]), np.ones((3, 2))
         np.testing.assert_almost_equal(2./3., zero_one_loss(y_true, y_pred))
         assert zero_one_loss(y_true, y_pred, normalize=False) == 2
 
