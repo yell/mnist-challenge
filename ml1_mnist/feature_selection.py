@@ -31,4 +31,10 @@ class VarianceThreshold(object):
 
     def fit_transform(self, X):
         _X = self._check_X(X)
-        return _X[:, (np.std(_X, axis=0, ddof=1) > self.threshold + 1e-8)]
+        return _X[:, (np.std(_X, axis=0) > self.threshold + 1e-8)]
+
+
+if __name__ == '__main__':
+    # run corresponding tests
+    from utils.testing import run_tests
+    run_tests(__file__)

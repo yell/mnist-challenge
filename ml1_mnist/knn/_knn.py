@@ -63,7 +63,7 @@ class KNNClassifier(BaseEstimator):
     (array([ 3.,  1.]), array([ 0.10049876,  0.90005555]))
     >>> knn1.predict(X_test)
     array([1])
-    >>> knn1.predict(X_test, weights='distance')
+    >>> knn1.set_params(weights='distance').predict(X_test)
     array([0])
 
 
@@ -96,6 +96,14 @@ class KNNClassifier(BaseEstimator):
     array([ 3.,  1.,  2.])
     >>> knn_loaded.predict(X_test)
     array([1])
+
+
+    Set new parameters and reset them
+    >>> knn3 = KNNClassifier(k=7).set_params(k=100).set_params(p=2, weights='distance')
+    >>> knn3.get_params(False)['k']
+    100
+    >>> knn3.reset_params().get_params(False)['k']
+    7
     """
     def __init__(self, k=5, p=2., weights='uniform', algorithm='kd_tree', leaf_size=30,
                  kernel=None, degree=3, gamma='auto'):
@@ -172,15 +180,7 @@ class KNNClassifier(BaseEstimator):
         indices, distances = self._k_neighbors_x(x, self.k)
         return self._aggregate(self._y[indices], distances)
 
-    def _predict(self, X=None, k=None, p=None, weights=None):
-        # update attributes if needed
-        # TODO: make via `set_params()`?
-        if k:
-            self.k = k
-        if p:
-            self.p = p
-        if weights:
-            self.weights = weights
+    def _predict(self, X=None):
         # ensure there are at least `k` training samples
         if self._n_samples < self.k:
             raise ValueError('number of training samples ({0}) must be at least `k`={1}'

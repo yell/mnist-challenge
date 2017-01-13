@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from utils import (import_trace,
                    pformat,
+                   is_param_name,
                    is_param_or_attribute_name)
 from utils.read_write import save_model
 
@@ -20,6 +21,7 @@ class BaseEstimator(object):
         self._n_features = None
         self._n_outputs = None
         self._called_fit = False
+        self._store_default_params()
 
     def _check_X_y(self, X, y=None):
         """
@@ -93,6 +95,9 @@ class BaseEstimator(object):
         else:
             raise ValueError('`fit` must be called before calling `predict`')
 
+    def model_name(self):
+        return self.__class__.__name__
+
     def get_params(self, deep=True, **params_mask):
         """Get parameters (and attributes) of the model.
 
@@ -141,6 +146,22 @@ class BaseEstimator(object):
         if deep:
             params = deepcopy(params)
         return params
+
+    def _store_default_params(self):
+        params = vars(self)
+        params = {key: params[key] for key in params if is_param_name(key)}
+        self._default_params = deepcopy(params)
+
+    def reset_params(self):
+        """Restore default params (that were passed to the constructor).
+
+        Returns
+        -------
+        self
+        """
+        for key, value in self._default_params.items():
+            setattr(self, key, value)
+        return self
 
     def set_params(self, **params):
         """Set parameters (and attributes) of the model.

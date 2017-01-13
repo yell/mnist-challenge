@@ -67,7 +67,7 @@ class StandardScaler(object):
         if self.with_mean:
             self.mean_ = np.mean(_X, axis=0)
         if self.with_std:
-            self.std_ = np.std(_X, axis=0, ddof=1)
+            self.std_ = np.std(_X, axis=0)
         self._called_fit = True
         return self
 
