@@ -3,8 +3,8 @@ import numpy as np
 import numpy.ma as ma
 from itertools import product
 
-from utils import RNG, Stopwatch
-from metrics import zero_one_loss
+from utils import RNG, Stopwatch, print_inline, width_format
+from metrics import accuracy_score
 
 
 class TrainTestSplitter(object):
@@ -217,6 +217,8 @@ class GridSearchCV(object):
         Params passed to `TrainTestSplitter`.
     n_splits : int, optional
         Number of folds passed to `TrainTestSplitter.k_fold_split`.
+    scoring : callable, optional
+        Scoring method to use (the higher value the better).
     refit : bool, optional
         If False, refit model only for new combination of X, y (and not on
         new combinations of parameters). It may be reasonable choice for
@@ -227,7 +229,7 @@ class GridSearchCV(object):
         Where to save models if `save_models` set to True.
     save_params : kwargs, optional
         Additional params that are passed to `model.save`
-    TODO: verbose : bool, optional
+    verbose : bool, optional
         If True, print the results of each iteration.
 
     Attributes
@@ -235,9 +237,11 @@ class GridSearchCV(object):
     cv_results_ : dict[str] = np.ndarray | np.ma.ndarray
         Can be imported into a pandas.DataFrame
     best_model_ : model object
-        Model that was chosen by the search, i.e. which gave smallest loss.
-    best_loss_ : float
-        Loss of `best_model_` on the left out data.
+        Model that was chosen by the search, i.e. which gave highest score.
+    best_score_ : float
+        Score of `best_model_` on the left out data.
+    best_std_ : float
+        Standard deviation that corresponds to the highest score.
     best_params_ : dict
         Parameter setting that gave the best results on the hold out data.
     best_index_ : int
@@ -285,6 +289,8 @@ class GridSearchCV(object):
     {'kernel': 'poly', 'k': 2, 'gamma': 0.1}
     {'kernel': 'rbf', 'k': 3, 'gamma': 0.1}
     {'kernel': 'poly', 'k': 3, 'gamma': 0.1}
+    >>> grid_cv.number_of_combinations()
+    26
     >>> grid_cv.unique_params()
     ['gamma', 'k', 'kernel', 'p', 'weights']
     >>> X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.],
@@ -298,7 +304,9 @@ class GridSearchCV(object):
     <...model_selection.GridSearchCV object at 0x...>
     >>> grid_cv.best_index_
     1
-    >>> grid_cv.best_loss_
+    >>> grid_cv.best_score_
+    1.0
+    >>> grid_cv.best_std_
     0.0
     >>> grid_cv.best_params_
     {'k': 2, 'weights': 'distance'}
@@ -308,25 +316,23 @@ class GridSearchCV(object):
            kernel=None, leaf_size=30, p=inf, weights='uniform')
     >>> for k, v in sorted(grid_cv.cv_results_.items()):
     ...     print k, ":", v # doctest: +ELLIPSIS
-    mean_loss : [ 0.25   0.     0.625  0.125  0.375  0.25 ]
+    mean_score : [ 0.75   1.     0.375  0.875  0.625  0.75 ]
     param_k : [ 2.  2.  3.  3.  2.  2.]
     param_p : [-- -- -- -- 1.0 inf]
     param_weights : ['uniform' 'distance' 'uniform' 'distance' -- --]
     params : [{'k': 2, 'weights': 'uniform'} {'k': 2, 'weights': 'distance'}
      {'k': 3, 'weights': 'uniform'} {'k': 3, 'weights': 'distance'}
      {'p': 1.0, 'k': 2} {'p': inf, 'k': 2}]
-    split0_loss : [ 0.25  0.    0.75  0.    0.5   0.25]
+    split0_score : [ 0.75  1.    0.25  1.    0.5   0.75]
     split0_test_time : [ 0.00...  0.00...  0.00...  0.00...  0.00...  0.00...]
-    split0_train_time : [  ...   0.00000000e+00   0.00000000e+00   0.00000000e+00
-       0.00000000e+00   0.00000000e+00]
-    split1_loss : [ 0.25  0.    0.5   0.25  0.25  0.25]
+    split0_train_time : [...]
+    split1_score : [ 0.75  1.    0.5   0.75  0.75  0.75]
     split1_test_time : [...]
-    split1_train_time : [  ...   0.00000000e+00   0.00000000e+00   0.00000000e+00
-       0.00000000e+00   0.00000000e+00]
-    std_loss : [ 0.     0.     0.125  0.125  0.125  0.   ]
+    split1_train_time : [...]
+    std_score : [ 0.     0.     0.125  0.125  0.125  0.   ]
     """
     def __init__(self, model, param_grid, param_order=None, train_test_splitter_params={},
-                 n_splits=3, loss=zero_one_loss, refit=True, save_models=False, dirpath='.', save_params={},
+                 n_splits=3, scoring=accuracy_score, refit=True, save_models=False, dirpath='.', save_params={},
                  verbose=True):
 
         self.model = model
@@ -341,7 +347,7 @@ class GridSearchCV(object):
 
         self.train_test_splitter_params = train_test_splitter_params
         self.n_splits = n_splits
-        self.loss = loss
+        self.scoring = scoring
         self.refit = refit
         self.save_models = save_models
         self.dirpath = dirpath
@@ -350,7 +356,8 @@ class GridSearchCV(object):
 
         self.cv_results_ = {}
         self.best_model_ = self.model
-        self.best_loss_ = np.inf
+        self.best_score_ = -np.inf
+        self.best_std_ = None
         self.best_params_ = None
         self.best_index_ = None
 
@@ -378,6 +385,9 @@ class GridSearchCV(object):
             for combination in product(*zip_lists):
                 yield dict(combination)
 
+    def number_of_combinations(self):
+        return sum(1 for _ in self.gen_params())
+
     def _check_X_y(self, X, y):
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
@@ -387,8 +397,8 @@ class GridSearchCV(object):
 
     def _best_model_name(self):
         name = self.best_model_.model_name()
-        name += "__loss_"
-        name += "{0:.5f}".format(self.best_loss_).replace('.', '_')
+        name += "__acc_"
+        name += "{0:.5f}".format(self.best_score_).replace('.', '_')
         for k, v in sorted(self.best_params_.items()):
             name += "__"
             name += str(k)
@@ -398,24 +408,34 @@ class GridSearchCV(object):
         return name
 
     def fit(self, X, y):
+        timer = Stopwatch(verbose=False).start()
         X, y = self._check_X_y(X, y)
         unique_params = self.unique_params()
         tts = TrainTestSplitter(**self.train_test_splitter_params)
+        number_of_combinations = self.number_of_combinations()
+        total_iter = self.n_splits * number_of_combinations
+        current_iter_width = len(str(total_iter))
+
+        if self.verbose:
+            print "Training {0} on {1} samples x {2} features.".format(self.model.model_name(), *X.shape)
+            print "{0}-fold CV for each of {1} params combinations == {2} fits ...\n"\
+                .format(self.n_splits, number_of_combinations, total_iter)
 
         # initialize `cv_results_`
-        self.cv_results_['mean_loss'] = []
-        self.cv_results_['std_loss'] = []
+        self.cv_results_['mean_score'] = []
+        self.cv_results_['std_score'] = []
         self.cv_results_['params'] = []
         for k in xrange(self.n_splits):
-            self.cv_results_['split{0}_loss'.format(k)] = []
+            self.cv_results_['split{0}_score'.format(k)] = []
             self.cv_results_['split{0}_train_time'.format(k)] = []
             self.cv_results_['split{0}_test_time'.format(k)] = []
         for param_name in unique_params:
             self.cv_results_['param_{0}'.format(param_name)] = ma.array([])
 
+        current_iter = 0
         if self.refit:
             # for each param combination fit consequently on each fold
-            # to obtain mean loss across splits as soon as possible
+            # to obtain mean score across splits as soon as possible
             for params_index, params in enumerate(self.gen_params()):
 
                 # set params and add to `cv_results_`
@@ -428,50 +448,77 @@ class GridSearchCV(object):
                     to_concat = ma.array([params.get(param_name, None)], mask=mask)
                     self.cv_results_[cv_key] = ma.concatenate((self.cv_results_[cv_key],
                                                                to_concat))
-                splits_losses = []
+                splits_scores = []
                 for split_index, (train, test) in enumerate(tts.k_fold_split(y, n_splits=self.n_splits,
                                                                             stratify=True)):
+                    # verbosing
+                    if self.verbose:
+                        current_iter += 1
+                        t = "iter: {0:{1}}/{2} ".format(current_iter, current_iter_width, total_iter)
+                        t += '+' * (split_index + 1) + '-' * (self.n_splits - split_index - 1)
+                        print_inline(t)
                     # fit and evaluate
                     with Stopwatch(verbose=False) as s:
                         self.model.fit(X[train], y[train])
-                    self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed_time)
+                    self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed())
                     with Stopwatch(verbose=False) as s:
                         y_pred = self.model.predict(X[test])
-                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed_time)
-                    loss = self.loss(y[test], y_pred)
-                    splits_losses.append(loss)
-                    # add loss to `cv_results_`
-                    self.cv_results_['split{0}_loss'.format(split_index)].append(loss)
+                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed())
+                    score = self.scoring(y[test], y_pred)
+                    splits_scores.append(score)
+                    # verbosing
+                    if self.verbose:
+                        print_inline(" elapsed: {0} sec".format(
+                            width_format(timer.elapsed(), default_width=7)))
+                        if split_index < self.n_splits - 1:
+                            t = ""
+                            if self.best_score_ > -np.inf:
+                                t += " - best acc.: {0:.4f} at {1}" \
+                                    .format(self.best_score_, self.best_params_)
+                            else:
+                                t += "   ..."
+                            print t
+                    # add score to `cv_results_`
+                    self.cv_results_['split{0}_score'.format(split_index)].append(score)
 
-                # compute mean and std loss
-                splits_losses = np.asarray(splits_losses)
-                mean_loss = np.mean(splits_losses)
-                std_loss = np.std(splits_losses)
-                self.cv_results_['mean_loss'].append(mean_loss)
-                self.cv_results_['std_loss'].append(std_loss)
+                # compute mean and std score
+                splits_scores = np.asarray(splits_scores)
+                mean_score = np.mean(splits_scores)
+                std_score = np.std(splits_scores)
+
+                self.cv_results_['mean_score'].append(mean_score)
+                self.cv_results_['std_score'].append(std_score)
                 # update 'best' attributes
-                if mean_loss < self.best_loss_:
+                if mean_score > self.best_score_:
                     self.best_index_ = params_index
-                    self.best_loss_ = mean_loss
+                    self.best_score_ = mean_score
+                    self.best_std_ = std_score
                     self.best_params_ = params
                     self.best_model_ = self.model
                     if self.save_models:
                         self.best_model_.save(filepath=os.path.join(self.dirpath, self._best_model_name()),
                                               **self.save_params)
+                # verbosing
+                if self.verbose:
+                    print_inline(" - mean acc.: {0:.4f} +/- 2 * {1:.3f}\n"
+                                 .format(mean_score, std_score))
+
         else: # if self.refit == False
             # fit for each fold and then evaluate on each combination
             # of params
+            current_best_score = -np.inf
+            current_best_params = None
             for split_index, (train, test) in enumerate(tts.k_fold_split(y, n_splits=self.n_splits,
                                                                          stratify=True)):
-                # fit model (only once per split)
-                with Stopwatch(verbose=False) as s:
-                    self.model.fit(X[train], y[train])
-
                 for params_index, params in enumerate(self.gen_params()):
                     # set params
                     self.model.reset_params().set_params(**params)
                     # on first split add params to `cv_results_`
                     if split_index == 0:
+                        # fit model (only once per split)
+                        with Stopwatch(verbose=False) as s:
+                            self.model.fit(X[train], y[train])
+                        # store params' values
                         self.cv_results_['params'].append(params)
                         for param_name in unique_params:
                             cv_key = 'param_{0}'.format(param_name)
@@ -480,45 +527,68 @@ class GridSearchCV(object):
                             self.cv_results_[cv_key] = ma.concatenate((self.cv_results_[cv_key],
                                                                        to_concat))
                     # write training time
-                    if params_index == 0:
-                        self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed_time)
-                    else:
-                        self.cv_results_['split{0}_train_time'.format(split_index)].append(0.)
+                    self.cv_results_['split{0}_train_time'.format(split_index)]\
+                        .append(s.elapsed() if params_index == 0 else 0.)
                     # evaluate
                     with Stopwatch(verbose=False) as s:
                         y_pred = self.model.predict(X[test])
-                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed_time)
-                    loss = self.loss(y[test], y_pred)
-                    # add loss to `cv_results_`
-                    cv_key = 'split{0}_loss'.format(split_index)
-                    self.cv_results_[cv_key].append(loss)
+                    self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed())
+                    score = self.scoring(y[test], y_pred)
+                    # add score to `cv_results_`
+                    cv_key = 'split{0}_score'.format(split_index)
+                    self.cv_results_[cv_key].append(score)
+                    # update "current" best score and params
+                    current_mean_score = np.mean([self.cv_results_['split{0}_score'.format(k)][params_index]
+                                                  for k in xrange(split_index + 1)])
+                    if current_mean_score > current_best_score:
+                        current_best_score = current_mean_score
+                        current_best_params = params
+                    # verbosing
+                    if self.verbose:
+                        current_iter += 1
+                        t = "iter: {0:{1}}/{2} ".format(current_iter, current_iter_width, total_iter)
+                        t += '+' * (split_index + 1) + '-' * (self.n_splits - split_index - 1)
+                        t += " elapsed: {0} sec".format(width_format(timer.elapsed(), default_width=7))
+                        if split_index < self.n_splits - 1:
+                            t += " - best acc.: {0:.4f}  [{1}/{2} splits] at {3}"\
+                                 .format(current_best_score, split_index + 1, self.n_splits, current_best_params)
+                        print_inline(t)
+                        if split_index < self.n_splits - 1: print
                     # after last split ...
                     if split_index == self.n_splits - 1:
                         # ... compute means, stds
-                        splits_losses = [self.cv_results_['split{0}_loss'.format(k)][params_index]
+                        splits_scores = [self.cv_results_['split{0}_score'.format(k)][params_index]
                                          for k in xrange(self.n_splits)]
-                        mean_loss = np.mean(splits_losses)
-                        std_loss = np.std(splits_losses)
-                        self.cv_results_['mean_loss'].append(mean_loss)
-                        self.cv_results_['std_loss'].append(std_loss)
+                        mean_score = np.mean(splits_scores)
+                        std_score = np.std(splits_scores)
+                        self.cv_results_['mean_score'].append(mean_score)
+                        self.cv_results_['std_score'].append(std_score)
                         # ... and update best attributes
-                        if mean_loss < self.best_loss_:
+                        if mean_score > self.best_score_:
                             self.best_index_ = params_index
-                            self.best_loss_ = mean_loss
+                            self.best_score_ = mean_score
+                            self.best_std_ = std_score
                             self.best_params_ = params
                             self.best_model_ = self.model
                             if self.save_models:
                                 self.best_model_.save(filepath=os.path.join(self.dirpath, self._best_model_name()),
                                                       **self.save_params)
+                        # verbosing
+                        if self.verbose:
+
+                            print_inline(" - best acc.: {0:.4f} +/- 2 * {1:.3f} at {2}\n"
+                                         .format(self.best_score_, self.best_std_, self.best_params_))
+
         # convert lists to np.ndarray
-        for key in (['mean_loss', 'std_loss', 'params'] +
+        for key in (['mean_score', 'std_score', 'params'] +
                     ['split{0}_{1}'.format(k, s) for k in xrange(self.n_splits)
-                     for s in ('loss', 'train_time', 'test_time')]):
+                     for s in ('score', 'train_time', 'test_time')]):
             self.cv_results_[key] = np.asarray(self.cv_results_[key])
         return self
 
     def to_df(self):
-        pass
+        import pandas as pd
+        return pd.DataFrame.from_dict(self.cv_results_)
 
 
 if __name__ == '__main__':
@@ -530,7 +600,7 @@ if __name__ == '__main__':
     # X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.],
     #      [0.9, 0.99], [0.1, 0.25], [0.8, 0.2], [0.45, 0.55]]
     # y = [0, 1, 1, 0, 0, 0, 1, 1]
-    # param_grid = ({'weights': ['uniform', 'distance'], 'k': [2, 3]}, {'p': [1., np.inf], 'k': [2]})
-    # grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, n_splits=2,
-    #                        refit = False, save_models = True, dirpath = '../cv_results/', verbose = False)
+    # param_grid = ({'weights': ['distance'], 'k': [2, 3]}, {'p': [1., np.inf], 'k': [2]})
+    # grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, n_splits=4,
+    #                        refit=0, save_models=False, verbose=True)
     # grid_cv.fit(X, y)

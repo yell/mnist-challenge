@@ -15,7 +15,7 @@ class Stopwatch(object):
     Elapsed time: 0.100... sec
     >>> with Stopwatch(verbose=False) as s:
     ...     time.sleep(0.1)
-    >>> np.abs(s.elapsed_time - 0.1) < 0.01
+    >>> np.abs(s.elapsed() - 0.1) < 0.01
     True
     """
 
@@ -27,16 +27,43 @@ class Stopwatch(object):
         else:
             # on most other platforms, the best timer is time.time()
             self.timerfunc = time.time
-            self.elapsed_time = None
+        self.start_ = None
+        self.elapsed_ = None
 
     def __enter__(self, verbose=False):
-        self.start = self.timerfunc()
-        return self
+        return self.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.elapsed_time = self.timerfunc() - self.start
+        elapsed = self.stop().elapsed()
         if self.verbose:
-            print "Elapsed time: {0:.3f} sec".format(self.elapsed_time)
+            print "Elapsed time: {0:.3f} sec".format(elapsed)
+
+    def start(self):
+        self.start_ = self.timerfunc()
+        self.elapsed_ = None
+        return self
+
+    def stop(self):
+        self.elapsed_ = self.timerfunc() - self.start_
+        self.start_ = None
+        return self
+
+    def elapsed(self):
+        if self.start_ is None:
+            return self.elapsed_
+        return self.timerfunc() - self.start_
+
+
+def print_inline(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+
+def width_format(x, default_width=8, max_precision=3):
+    len_int_x = len(str(int(x)))
+    width = max(len_int_x, default_width)
+    precision = min(max_precision, max(0, default_width - 1 - len_int_x))
+    return "{0:{1}.{2}f}".format(x, width, precision)
 
 
 def one_hot(y):
