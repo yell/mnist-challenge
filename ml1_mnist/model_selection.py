@@ -466,6 +466,8 @@ class GridSearchCV(object):
                     self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed())
                     score = self.scoring(y[test], y_pred)
                     splits_scores.append(score)
+                    # add score to `cv_results_`
+                    self.cv_results_['split{0}_score'.format(split_index)].append(score)
                     # verbosing
                     if self.verbose:
                         print_inline(" elapsed: {0} sec".format(
@@ -478,11 +480,8 @@ class GridSearchCV(object):
                             else:
                                 t += "   ..."
                             print t
-                    # add score to `cv_results_`
-                    self.cv_results_['split{0}_score'.format(split_index)].append(score)
 
                 # compute mean and std score
-                splits_scores = np.asarray(splits_scores)
                 mean_score = np.mean(splits_scores)
                 std_score = np.std(splits_scores)
 
@@ -506,18 +505,19 @@ class GridSearchCV(object):
         else: # if self.refit == False
             # fit for each fold and then evaluate on each combination
             # of params
-            current_best_score = -np.inf
-            current_best_params = None
             for split_index, (train, test) in enumerate(tts.k_fold_split(y, n_splits=self.n_splits,
                                                                          stratify=True)):
+                current_best_score = -np.inf
+                current_best_params = None
                 for params_index, params in enumerate(self.gen_params()):
                     # set params
                     self.model.reset_params().set_params(**params)
-                    # on first split add params to `cv_results_`
-                    if split_index == 0:
-                        # fit model (only once per split)
+                    # fit model (only once per split)
+                    if params_index == 0:
                         with Stopwatch(verbose=False) as s:
                             self.model.fit(X[train], y[train])
+                    # on first split add params to `cv_results_`
+                    if split_index == 0:
                         # store params' values
                         self.cv_results_['params'].append(params)
                         for param_name in unique_params:
@@ -575,7 +575,6 @@ class GridSearchCV(object):
                                                       **self.save_params)
                         # verbosing
                         if self.verbose:
-
                             print_inline(" - best acc.: {0:.4f} +/- 2 * {1:.3f} at {2}\n"
                                          .format(self.best_score_, self.best_std_, self.best_params_))
 
@@ -588,7 +587,7 @@ class GridSearchCV(object):
 
     def to_df(self):
         import pandas as pd
-        return pd.DataFrame.from_dict(self.cv_results_)
+        return pd.DataFrame.from_dict(self.cv_results_).fillna('')
 
 
 if __name__ == '__main__':
@@ -596,11 +595,3 @@ if __name__ == '__main__':
     import test_model_selection as t
     from utils.testing import run_tests
     run_tests(__file__, t)
-    # from knn import KNNClassifier
-    # X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.],
-    #      [0.9, 0.99], [0.1, 0.25], [0.8, 0.2], [0.45, 0.55]]
-    # y = [0, 1, 1, 0, 0, 0, 1, 1]
-    # param_grid = ({'weights': ['distance'], 'k': [2, 3]}, {'p': [1., np.inf], 'k': [2]})
-    # grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, n_splits=4,
-    #                        refit=0, save_models=False, verbose=True)
-    # grid_cv.fit(X, y)
