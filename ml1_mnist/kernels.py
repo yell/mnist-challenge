@@ -2,6 +2,15 @@ import numpy as np
 import scipy.spatial.distance as dist
 
 
+def load_kernel(kernel_name, **kernel_params):
+    return {
+        'linear': Linear,
+        'poly': Poly,
+        'rbf': RBF,
+        'sigmoid': Sigmoid
+    }[kernel_name.lower()](**kernel_params)
+
+
 class BaseKernel(object):
     def __call__(self, x, y):
         """Compute the kernel function on `x`, `y`.
@@ -52,6 +61,9 @@ class Linear(BaseKernel):
     array([[ 1.  ],
            [ 2.25]])
     """
+    def __init__(self, **kwargs):
+        pass
+
     def _call(self, x, y):
         return np.dot(x, y.T)
 
@@ -76,7 +88,7 @@ class Poly(BaseKernel):
     array([[  4.    ],
            [ 10.5625]])
     """
-    def __init__(self, degree=2.0, offset=0.0, gamma=1.0):
+    def __init__(self, degree=2.0, offset=0.0, gamma=1.0, **kwargs):
         self.degree = degree
         self.offset = offset
         self.gamma = gamma
@@ -113,7 +125,7 @@ class RBF(BaseKernel):
     array([[ 3.11520313],
            [ 1.47151776]])
     """
-    def __init__(self, gamma=1.0, sigma=1.0):
+    def __init__(self, gamma=1.0, sigma=1.0, **kwargs):
         self.gamma = gamma
         self.sigma = sigma
 
@@ -150,7 +162,7 @@ class Sigmoid(BaseKernel):
     array([[ 0.46211716],
            [ 0.76159416]])
     """
-    def __init__(self, gamma=1.0, offset=0.0):
+    def __init__(self, gamma=1.0, offset=0.0, **kwargs):
         self.gamma = gamma
         self.offset = offset
 
