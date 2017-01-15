@@ -1,4 +1,5 @@
 .idea/*
+ml1_mnist/.idea/*
 .ipynb_checkpoints/*
 data/*.idx1-ubyte
 data/*.idx3-ubyte
