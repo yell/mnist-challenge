@@ -4,7 +4,9 @@ from collections import Counter
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import minkowski
 
-import env; from base import BaseEstimator
+import env
+from base import BaseEstimator
+from kernels import load_kernel
 
 
 class KNNClassifier(BaseEstimator):
@@ -29,15 +31,14 @@ class KNNClassifier(BaseEstimator):
         - 'brute' will use a brute-force search
     leaf_size : positive int, optional
         Leaf size passed to KDTree.
+    metric : None or callable, optional
+        The distance metric to use. If None, Minkowski metric is used.
+        If not None, 'kd-tree' algorithm cannot be used.
     kernel : None, {'rbf', 'poly', 'linear', 'sigmoid'} or callable, optional
         Specifies the kernel type to be used in the algorithm.
         If not None, ignore metric and use kernel as a measure of similarity.
-    degree : positive int, optional
-        Degree of the polynomial kernel function ('poly').
-        Ignored by all other kernels.
-    gamma : positive float or 'auto', optional
-        Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
-        If gamma is 'auto', then 1/`n_features` will be used instead.
+    kernel_params : dict, optional
+        Additional kwargs passed to `kernel`.
 
     Attributes
     ----------
@@ -53,8 +54,9 @@ class KNNClassifier(BaseEstimator):
     >>> X_test = [[0.9, 0.99]]
     >>> knn1 = KNNClassifier(k=3, algorithm='brute').fit(X, y)
     >>> knn1
-    KNNClassifier(algorithm='brute', degree=3, gamma='auto', k=3, kd_tree_=None,
-           kernel=None, leaf_size=30, p=2.0, weights='uniform')
+    KNNClassifier(algorithm='brute', k=3, kd_tree_=None, kernel=None,
+           kernel_params={}, leaf_size=30, metric=None, p=2.0,
+           weights='uniform')
     >>> knn1.k_neighbors(X_test)
     array([ 3.,  1.,  2.])
     >>> knn1.k_neighbors(X_test, return_distances=True)
@@ -65,18 +67,28 @@ class KNNClassifier(BaseEstimator):
     array([1])
     >>> knn1.set_params(weights='distance').predict(X_test)
     array([0])
+    >>> knn1.set_params(metric=lambda x, y: np.abs(x[0] - y[0]) ** 2).predict(X_test)
+    array([1])
+    >>> knn1.set_params(kernel='rbf').predict(X_test)
+    array([0])
 
 
     k-NN using brute-force algorithm
     >>> knn2 = KNNClassifier(k=3, algorithm='kd_tree', leaf_size=1).fit(X, y)
     >>> knn2 # doctest: +ELLIPSIS
-    KNNClassifier(algorithm='kd_tree', degree=3, gamma='auto', k=3,
+    KNNClassifier(algorithm='kd_tree', k=3,
            kd_tree_=<scipy.spatial.ckdtree.cKDTree object at 0x...>,
-           kernel=None, leaf_size=1, p=2.0, weights='uniform')
+           kernel=None, kernel_params={}, leaf_size=1, metric=None, p=2.0,
+           weights='uniform')
     >>> knn2.k_neighbors(X_test)
     array([ 3.,  1.,  2.])
     >>> knn2.predict(X_test)
     array([1])
+    >>> knn2.set_params(kernel='poly').predict(X_test)
+    Warning: `algorithm`=='kd_tree' cannot be used with custom metric function.
+    Switching to `algorithm`=='brute'
+    array([1])
+    >>> knn2 = knn2.set_params(kernel=None, algorithm='kd_tree')
 
 
     Save and load (k-NN) model
@@ -89,9 +101,10 @@ class KNNClassifier(BaseEstimator):
     # this won't build k-d tree again neither!
     >>> knn_loaded = load_model('knn.json').fit(X, y)
     >>> knn_loaded # doctest: +ELLIPSIS
-    KNNClassifier(algorithm='kd_tree', degree=3, gamma='auto', k=3,
+    KNNClassifier(algorithm='kd_tree', k=3,
            kd_tree_=<scipy.spatial.ckdtree.cKDTree object at 0x...>,
-           kernel=None, leaf_size=1, p=2.0, weights='uniform')
+           kernel=None, kernel_params={}, leaf_size=1, metric=None, p=2.0,
+           weights='uniform')
     >>> knn_loaded.k_neighbors(X_test)
     array([ 3.,  1.,  2.])
     >>> knn_loaded.predict(X_test)
@@ -106,20 +119,39 @@ class KNNClassifier(BaseEstimator):
     7
     """
     def __init__(self, k=5, p=2., weights='uniform', algorithm='kd_tree', leaf_size=30,
-                 kernel=None, degree=3, gamma='auto'):
+                 metric=None, kernel=None, kernel_params={}):
 
         self.k = k
         self.p = p
         self.weights = weights
         self.algorithm = algorithm
         self.leaf_size = leaf_size
+        self.metric = metric
         self.kernel = kernel
-        self.degree = degree
-        self.gamma = gamma
+        self.kernel_params = kernel_params
         self.kd_tree_ = None
         super(KNNClassifier, self).__init__(_y_required=True)
 
+    def _resolve_metric(self):
+        if (self.metric or self.kernel) and self.algorithm == 'kd_tree':
+            print ("Warning: `algorithm`=='kd_tree' cannot be used with custom metric function.\n" +
+                   "Switching to `algorithm`=='brute'")
+            self.algorithm = 'brute'
+        if self.kernel:
+            if isinstance(self.kernel, str):
+                kernel_func = load_kernel(self.kernel, **self.kernel_params)
+            else:
+                kernel_func = self.kernel
+            self._metric = lambda x, y: kernel_func(x, x) - 2. * kernel_func(x, y) \
+                                                               + kernel_func(y, y)
+        elif self.metric:
+            self._metric = self.metric
+        else:
+            self._metric = lambda x, y: minkowski(x, y, self.p)
+
     def _fit(self, X, y):
+        # check metric
+        self._resolve_metric()
         if self.algorithm == 'kd_tree':
             # this ensures that tree is not built after loading from file
             # if it was already been built
@@ -137,7 +169,7 @@ class KNNClassifier(BaseEstimator):
         """
         if self.algorithm == 'brute':
             # compute distances between x and all examples in the training set.
-            distances = [minkowski(x, x_train, self.p) for x_train in self._X]
+            distances = [self._metric(x, x_train) for x_train in self._X]
             distances = np.asarray(distances)
 
             # find k closest points efficiently in O(`n_samples`):
@@ -156,6 +188,8 @@ class KNNClassifier(BaseEstimator):
         if self._n_samples < k:
             raise ValueError('number of training samples ({0}) must be at least `k`={1}'
                              .format(self._n_samples, k))
+        # check metric
+        self._resolve_metric()
 
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
@@ -169,8 +203,7 @@ class KNNClassifier(BaseEstimator):
 
     def _aggregate(self, neighbors_targets, distances):
         # TODO: split by this method to KNNClassifier, KNNRegressor, ...
-        if self.k == 1:
-            return neighbors_targets
+        neighbors_targets = np.atleast_1d(neighbors_targets)
         if self.weights == 'uniform':
             return Counter(neighbors_targets).most_common(1)[0][0]
         if self.weights == 'distance':
@@ -187,6 +220,8 @@ class KNNClassifier(BaseEstimator):
         if self._n_samples < self.k:
             raise ValueError('number of training samples ({0}) must be at least `k`={1}'
                              .format(self._n_samples, self.k))
+        # check metric
+        self._resolve_metric()
         predictions = [self._predict_x(x) for x in X]
         return np.asarray(predictions)
 
