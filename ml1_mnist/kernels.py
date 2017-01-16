@@ -2,13 +2,17 @@ import numpy as np
 import scipy.spatial.distance as dist
 
 
-def load_kernel(kernel_name, **kernel_params):
-    return {
-        'linear': Linear,
-        'poly': Poly,
-        'rbf': RBF,
-        'sigmoid': Sigmoid
-    }[kernel_name.lower()](**kernel_params)
+def get_kernel(kernel_name, **kernel_params):
+    """
+    Examples
+    --------
+    >>> get_kernel('rbf', gamma=2.)
+    1.0 ** 2 * RBF(gamma=2.0)
+    """
+    for k, v in globals().items():
+        if k.lower() == kernel_name.lower():
+            return v(**kernel_params)
+    raise ValueError("invalid kernel name '{0}'".format(kernel_name))
 
 
 class BaseKernel(object):

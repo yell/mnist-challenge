@@ -1,4 +1,5 @@
 import os.path
+import pandas as pd
 import numpy as np
 import numpy.ma as ma
 from itertools import product
@@ -298,7 +299,7 @@ class GridSearchCV(object):
     >>> y = [0, 1, 1, 0, 0, 0, 1, 1]
     >>> param_grid = ({'weights': ['uniform', 'distance'], 'k': [2, 3]}, {'p': [1., np.inf], 'k': [2]})
 
-    >>> grid_cv = GridSearchCV(model=KNNClassifier(), param_grid=param_grid, n_splits=2,
+    >>> grid_cv = GridSearchCV(model=KNNClassifier(algorithm='kd_tree'), param_grid=param_grid, n_splits=2,
     ...                        refit=False, save_models=False ,verbose=False)
     >>> grid_cv.fit(X, y) # doctest: +ELLIPSIS
     <...model_selection.GridSearchCV object at 0x...>
@@ -311,12 +312,13 @@ class GridSearchCV(object):
     >>> grid_cv.best_params_
     {'k': 2, 'weights': 'distance'}
     >>> grid_cv.best_model_ # doctest: +ELLIPSIS
-    KNNClassifier(algorithm='kd_tree', degree=3, gamma='auto', k=2,
+    KNNClassifier(algorithm='kd_tree', k=2,
            kd_tree_=<scipy.spatial.ckdtree.cKDTree object at 0x...>,
-           kernel=None, leaf_size=30, p=inf, weights='uniform')
+           kernel=None, kernel_params={}, leaf_size=30, metric=None, p=inf,
+           weights='uniform')
     >>> for k, v in sorted(grid_cv.cv_results_.items()):
     ...     print k, ":", v # doctest: +ELLIPSIS
-    mean_score : [ 0.75   1.     0.375  0.875  0.625  0.75 ]
+    mean_score : [ 0.625  1.     0.125  1.     0.5    0.625]
     param_k : [ 2.  2.  3.  3.  2.  2.]
     param_p : [-- -- -- -- 1.0 inf]
     param_weights : ['uniform' 'distance' 'uniform' 'distance' -- --]
@@ -324,12 +326,12 @@ class GridSearchCV(object):
      {'k': 3, 'weights': 'uniform'} {'k': 3, 'weights': 'distance'}
      {'p': 1.0, 'k': 2} {'p': inf, 'k': 2}]
     split0_score : [ 0.75  1.    0.25  1.    0.5   0.75]
-    split0_test_time : [ 0.00...  0.00...  0.00...  0.00...  0.00...  0.00...]
+    split0_test_time : [ 0.0...  0.0...  0.0...  0.0...  0.0...  0.0...]
     split0_train_time : [...]
-    split1_score : [ 0.75  1.    0.5   0.75  0.75  0.75]
+    split1_score : [ 0.5  1.   0.   1.   0.5  0.5]
     split1_test_time : [...]
     split1_train_time : [...]
-    std_score : [ 0.     0.     0.125  0.125  0.125  0.   ]
+    std_score : [ 0.125  0.     0.125  0.     0.     0.125]
     """
     def __init__(self, model, param_grid, param_order=None, train_test_splitter_params={},
                  n_splits=3, scoring=accuracy_score, refit=True, save_models=False, dirpath='.', save_params={},
@@ -586,12 +588,11 @@ class GridSearchCV(object):
         return self
 
     def to_df(self):
-        import pandas as pd
         return pd.DataFrame.from_dict(self.cv_results_).fillna('')
 
 
 if __name__ == '__main__':
     # run corresponding tests
-    import test_model_selection as t
+    import tests.test_model_selection as t
     from utils.testing import run_tests
     run_tests(__file__, t)

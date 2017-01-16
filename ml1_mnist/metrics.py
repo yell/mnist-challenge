@@ -8,6 +8,19 @@ except ImportError:
     pass
 
 
+def get_metric(metric_name):
+    """
+    Examples
+    --------
+    >>> get_metric('accuracy_score')([0,0,0,0],[0,1,0,1])
+    0.5
+    """
+    for k, v in globals().items():
+        if k.lower() == metric_name.lower():
+            return v
+    raise ValueError("invalid metric name '{0}'".format(metric_name))
+
+
 def accuracy_score(y_actual, y_predicted, normalize=True):
     """Accuracy classification score.
 
@@ -194,6 +207,6 @@ misclassification_rate = zero_one_loss
 
 if __name__ == '__main__':
     # run corresponding tests
-    import test_metrics as t
+    import tests.test_metrics as t
     from utils.testing import run_tests
     run_tests(__file__, t)

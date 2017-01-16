@@ -6,7 +6,7 @@ from scipy.spatial.distance import minkowski
 
 import env
 from base import BaseEstimator
-from kernels import load_kernel
+from kernels import get_kernel
 
 
 class KNNClassifier(BaseEstimator):
@@ -132,14 +132,14 @@ class KNNClassifier(BaseEstimator):
         self.kd_tree_ = None
         super(KNNClassifier, self).__init__(_y_required=True)
 
-    def _resolve_metric(self):
+    def _check_metric(self):
         if (self.metric or self.kernel) and self.algorithm == 'kd_tree':
             print ("Warning: `algorithm`=='kd_tree' cannot be used with custom metric function.\n" +
                    "Switching to `algorithm`=='brute'")
             self.algorithm = 'brute'
         if self.kernel:
             if isinstance(self.kernel, str):
-                kernel_func = load_kernel(self.kernel, **self.kernel_params)
+                kernel_func = get_kernel(self.kernel, **self.kernel_params)
             else:
                 kernel_func = self.kernel
             self._metric = lambda x, y: kernel_func(x, x) - 2. * kernel_func(x, y) \
@@ -150,8 +150,7 @@ class KNNClassifier(BaseEstimator):
             self._metric = lambda x, y: minkowski(x, y, self.p)
 
     def _fit(self, X, y):
-        # check metric
-        self._resolve_metric()
+        self._check_metric()
         if self.algorithm == 'kd_tree':
             # this ensures that tree is not built after loading from file
             # if it was already been built
@@ -188,8 +187,7 @@ class KNNClassifier(BaseEstimator):
         if self._n_samples < k:
             raise ValueError('number of training samples ({0}) must be at least `k`={1}'
                              .format(self._n_samples, k))
-        # check metric
-        self._resolve_metric()
+        self._check_metric()
 
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
@@ -220,8 +218,7 @@ class KNNClassifier(BaseEstimator):
         if self._n_samples < self.k:
             raise ValueError('number of training samples ({0}) must be at least `k`={1}'
                              .format(self._n_samples, self.k))
-        # check metric
-        self._resolve_metric()
+        self._check_metric()
         predictions = [self._predict_x(x) for x in X]
         return np.asarray(predictions)
 

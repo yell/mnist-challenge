@@ -1,7 +1,7 @@
 import numpy as np
 from unittest import skip
 
-from model_selection import TrainTestSplitter as TTS
+from ml1_mnist.model_selection import TrainTestSplitter as TTS
 
 
 class TestSplit(object):
