@@ -67,8 +67,40 @@ def width_format(x, default_width=8, max_precision=3):
 
 
 def one_hot(y):
-    n_values = np.max(y) + 1
-    return np.eye(n_values)[y]
+    """Convert `y` to one-hot encoding.
+
+    Examples
+    --------
+    >>> y = [2, 1, 0, 2, 0]
+    >>> one_hot(y)
+    array([[ 0.,  0.,  1.],
+           [ 0.,  1.,  0.],
+           [ 1.,  0.,  0.],
+           [ 0.,  0.,  1.],
+           [ 1.,  0.,  0.]])
+    """
+    n_classes = np.max(y) + 1
+    return np.eye(n_classes)[y]
+
+
+def unhot(y):
+    """
+    Map `y` from one-hot encoding to {0, ..., `n_classes` - 1}.
+
+    Examples
+    --------
+    >>> y = [[0, 0, 1],
+    ...      [0, 1, 0],
+    ...      [1, 0, 0],
+    ...      [0, 0, 1],
+    ...      [1, 0, 0]]
+    >>> unhot(y)
+    array([2, 1, 0, 2, 0])
+    """
+    if not isinstance(y, np.ndarray):
+        y = np.asarray(y)
+    _, n_classes = y.shape
+    return y.dot(np.arange(n_classes))
 
 
 if __name__ == '__main__':
