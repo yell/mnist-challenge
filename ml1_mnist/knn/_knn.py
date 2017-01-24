@@ -155,7 +155,7 @@ class KNNClassifier(BaseEstimator):
         if self.algorithm == 'kd_tree':
             # this ensures that tree is not built after loading from file
             # if it was already been built
-            if self._called_fit or not self.kd_tree_:
+            if self._called_fit or self.kd_tree_ is None:
                 self.kd_tree_ = cKDTree(X, leafsize=self.leaf_size)
         elif self.algorithm == 'brute':
             pass

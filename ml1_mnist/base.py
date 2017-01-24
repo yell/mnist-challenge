@@ -171,7 +171,10 @@ class BaseEstimator(object):
     def fit(self, X, y=None, **fit_params):
         """Fit the model according to the given training data."""
         self._check_X_y(X, y)
-        self._fit(self._X, self._y, **fit_params)
+        if self._y_required:
+            self._fit(self._X, self._y, **fit_params)
+        else:
+            self._fit(self._X, **fit_params)
         self._called_fit = True
         return self
 
