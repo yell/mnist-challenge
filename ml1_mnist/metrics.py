@@ -81,6 +81,37 @@ def zero_one_loss(y_actual, y_predicted, normalize=True):
     return loss
 
 
+def log_loss(y_actual, y_predicted, eps=1e-15, normalize=True):
+    """Log loss, aka logistic loss or cross-entropy loss.
+
+    Parameters
+    ----------
+    y_actual : (n_samples, n_outputs) array-like
+        Ground truth (correct) labels.
+    y_predicted : (n_samples, n_outputs) array-like
+        Predicted labels, as returned by a classifier.
+    eps : float, optional
+        Log loss is (formally) undefined for p = 0 or p = 1,
+        so probabilities are clipped to max(`eps`, min(1 - `eps`, p)).
+    normalize : bool, optional
+        If True, return the mean loss per sample.
+        Otherwise, return the sum of the per-sample losses.
+
+    Returns
+    -------
+    loss : float
+    """
+    if not isinstance(y_actual, np.ndarray):
+        y_actual = np.asarray(y_actual)
+    if not isinstance(y_predicted, np.ndarray):
+        y_predicted = np.asarray(y_predicted)
+    y_predicted = np.clip(y_predicted, eps, 1. - eps)
+    loss = -np.sum(y_actual * np.log(y_predicted))
+    if normalize:
+        loss /= float(len(y_actual))
+    return loss
+
+
 def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
     """Compute confusion matrix.
 
@@ -203,6 +234,7 @@ def plot_confusion_matrix(C, labels=None, labels_fontsize=None, **heatmap_params
 
 # aliases
 misclassification_rate = zero_one_loss
+categorical_crossentropy = log_loss
 
 
 if __name__ == '__main__':
