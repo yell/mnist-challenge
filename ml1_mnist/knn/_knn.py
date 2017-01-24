@@ -130,6 +130,7 @@ class KNNClassifier(BaseEstimator):
         self.kernel = kernel
         self.kernel_params = kernel_params
         self.kd_tree_ = None
+        # TODO: add precompute : bool
         super(KNNClassifier, self).__init__(_y_required=True)
 
     def _check_metric(self):
@@ -171,7 +172,7 @@ class KNNClassifier(BaseEstimator):
             distances = [self._metric(x, x_train) for x_train in self._X]
             distances = np.asarray(distances)
 
-            # find k closest points efficiently in O(`n_samples`):
+            # find k closest points efficiently in O(`n_samples` + k):
             indices = np.argpartition(distances, kth=k - 1)[:k]
 
             # leave only the respective distances
