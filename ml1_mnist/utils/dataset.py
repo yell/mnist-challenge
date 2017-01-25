@@ -2,13 +2,6 @@ import struct
 import os.path
 import numpy as np
 
-try:
-    import seaborn as sns
-    sns.set()
-    from matplotlib import pyplot as plt
-except ImportError:
-    pass
-
 
 def load_mnist(mode='train', path='.'):
     """
@@ -41,22 +34,3 @@ def load_mnist(mode='train', path='.'):
         target = np.fromfile(ftarget, dtype=np.int8)
 
     return data.astype(float), target
-
-
-def plot_mnist_digit(x, target=None):
-    """Render a given array of pixel data."""
-    image = x.reshape((28, 28))
-    if 'sns' in globals():
-        fig = plt.figure(figsize=(6, 5))
-        ticklabels = range(28)
-        ticklabels[::-2] = [''] * len(ticklabels[::-2])
-        ax = sns.heatmap(image, cmap='Greys_r',
-                         yticklabels=ticklabels, xticklabels=ticklabels)
-        if target:
-            ax.set_title("Label is {0}".format(target), fontsize=18)
-        return ax
-    else:
-        fig = plt.figure()
-        plt.imshow(image, cmap='gray')
-        if target:
-            plt.title("Label is {0}".format(target), fontsize=18)
