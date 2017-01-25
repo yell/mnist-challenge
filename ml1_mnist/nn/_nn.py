@@ -51,7 +51,7 @@ class NNClassifier(BaseEstimator):
 
     def parametric_layers(self):
         for layer in self.layers:
-            if hasattr(layer, 'W'):  # TODO: fix
+            if hasattr(layer, 'W'):  # TODO: more generic solution
                 yield layer
 
     def batch_iter(self):
@@ -75,6 +75,7 @@ class NNClassifier(BaseEstimator):
             self._setup_layers(X.shape)
         self._X_val = X_val
         self._y_val = y_val
+        print "Train on {0} samples, validate on {1} samples\n".format(len(X), len(X_val))
         self._training = True
         self._optimizer.optimize(self)
         self._training = False
@@ -115,20 +116,21 @@ class NNClassifier(BaseEstimator):
 
 if __name__ == '__main__':
     nn = NNClassifier(layers=[
-        FullyConnected(16),
+        # FullyConnected(2500),
+        # Activation('leaky_relu'),
+        # FullyConnected(2000),
+        # Activation('leaky_relu'),
+        # FullyConnected(1000),
+        # Activation('softmax'),
+        FullyConnected(32),
         Activation('leaky_relu'),
         FullyConnected(10),
         Activation('softmax')
-    ], n_batches=30, random_seed=1337, optimizer_params=dict(max_epochs=2, verbose=True))
+    ], n_batches=30, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
+    X /= 255.
+    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y, train_ratio=0.85)
     y = one_hot(y)
-    nn.fit(X, y)
-    # for Xb, yb in nn.batch_iter():
-        # print Xb.shape, yb.shape
-    # print nn.layers[0].W.shape
-    # print nn.layers[0].b.shape
-    # print nn.layers[2].W.shape
-    # print nn.layers[2].b.shape
-    # print nn.n_params
+    nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])

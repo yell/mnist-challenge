@@ -1,4 +1,5 @@
 import numpy as np
+from collections import defaultdict
 
 from utils import print_inline, width_format, Stopwatch
 
@@ -11,9 +12,8 @@ def get_optimizer(optimizer_name, **params):
 
 
 class BaseOptimizer(object):
-    def __init__(self, max_epochs=100, tol=1e-4, verbose=False):
+    def __init__(self, max_epochs=100, verbose=False):
         self.max_epochs = max_epochs
-        self.tol = tol
         self.verbose = verbose
 
     def _setup(self, nnet):
@@ -46,12 +46,12 @@ class BaseOptimizer(object):
             score = nnet._metric(nnet._y, nnet.validate())
             # TODO: change acc to metric name
             msg += ' - acc.: {0}'.format(width_format(score, default_width=6, max_precision=4))
-            if nnet._X_val:
+            if nnet._X_val is not None:
                 val_loss = nnet._loss(nnet._y_val, nnet.validate_proba(nnet._X_val))
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
                 msg += ' - val. loss: {0}'.format(width_format(val_loss, default_width=5, max_precision=4))
                 # TODO: fix acc.
-                msg += ' - val. acc.: {0:.4f}'.format(width_format(val_score, default_width=6, max_precision=4))
+                msg += ' - val. acc.: {0}'.format(width_format(val_score, default_width=6, max_precision=4))
             if self.verbose: print msg
             # TODO: save learning curves
         return loss_history
@@ -66,5 +66,24 @@ class Adam(BaseOptimizer):
         self.t = 1
         super(Adam, self).__init__(**params)
 
+    def _setup(self, nnet):
+        # accumulators for moment and velocity
+        self.ms, self.vs = defaultdict(dict), defaultdict(dict)
+        for i, layer in enumerate(nnet.parametric_layers()):
+            self.ms[i]['W'] = np.zeros_like(layer.W)
+            self.ms[i]['b'] = np.zeros_like(layer.b)
+            self.vs[i]['W'] = np.zeros_like(layer.W)
+            self.vs[i]['b'] = np.zeros_like(layer.b)
+
     def update(self, nnet):
-        pass
+        for i, layer in enumerate(nnet.parametric_layers()):
+            self.ms[i]['W'] = self.beta_1 * self.ms[i]['W'] + (1. - self.beta_1) * layer.dW
+            self.ms[i]['b'] = self.beta_1 * self.ms[i]['b'] + (1. - self.beta_1) * layer.db
+            self.vs[i]['W'] = self.beta_2 * self.vs[i]['W'] + (1. - self.beta_2) * layer.dW ** 2
+            self.vs[i]['b'] = self.beta_2 * self.vs[i]['b'] + (1. - self.beta_2) * layer.db ** 2
+            lr = self.learning_rate * np.sqrt(1. - self.beta_2 ** self.t) / (1. - self.beta_1 ** self.t)
+            W_step = lr * self.ms[i]['W'] / (np.sqrt(self.vs[i]['W']) + self.epsilon)
+            b_step = lr * self.ms[i]['b'] / (np.sqrt(self.vs[i]['b']) + self.epsilon)
+            layer.W -= W_step
+            layer.b -= b_step
+        self.t += 1

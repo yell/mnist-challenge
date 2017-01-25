@@ -23,14 +23,14 @@ def linear(z, derivative=False):
 def sigmoid(z, derivative=False):
     y = 1. / (1. + np.exp(-z))
     if derivative:
-        return y * (1. - y) # TODO: or z * (1. - z)?
+        return y * (1. - y)
     return y
 
 
 def tanh(z, derivative=False):
     y = np.tanh(z)
     if derivative:
-        return 1. - y ** 2 # TODO: or 1. - z ** 2?
+        return 1. - y ** 2
     return y
 
 
@@ -95,6 +95,6 @@ def softmax(z, derivative=False):
     # avoid numerical overflow by removing max
     e = np.exp(z - np.amax(z, axis=1, keepdims=True))
     y = e / np.sum(e, axis=1, keepdims=True)
-    if derivative: # TODO: or z * (1. - z)?
+    if derivative:
         return y * (1. - y) # element-wisely
     return y
