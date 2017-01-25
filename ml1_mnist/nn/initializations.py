@@ -1,5 +1,7 @@
 import numpy as np
 
+from utils import RNG
+
 
 def get_initialization(initialization_name):
     for k, v in globals().items():
@@ -23,16 +25,16 @@ def _glorot_fan(shape):
     return fan_in, fan_out
 
 
-def glorot_uniform(shape):
+def glorot_uniform(shape, random_seed=None):
     fan_in, fan_out = _glorot_fan(shape)
     s = np.sqrt(6. / (fan_in + fan_out))
-    return np.random.uniform(low=-s, high=s, size=shape)
+    return RNG(random_seed).uniform(low=-s, high=s, size=shape)
 
 
-def glorot_normal(shape):
+def glorot_normal(shape, random_seed=None):
     fan_in, fan_out = _glorot_fan(shape)
     s = np.sqrt(2. / (fan_in + fan_out))
-    return np.random.normal(scale=s, size=shape)
+    return RNG(random_seed).normal(scale=s, size=shape)
 
 
 if __name__ == '__main__':

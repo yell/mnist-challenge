@@ -29,6 +29,10 @@ class NNClassifier(BaseEstimator):
         self._optimizer = get_optimizer(self.optimizer, **self.optimizer_params)
         self._initialized = False
         self._training = False
+        self.shuffle = shuffle
+        self.random_seed = random_seed
+        for layer in self.layers:
+            layer.random_seed = self.random_seed
         self._tts = TrainTestSplitter(shuffle=True, random_seed=random_seed)
         super(NNClassifier, self).__init__(_y_required=True) # TODO: split into multiple NNs later
 

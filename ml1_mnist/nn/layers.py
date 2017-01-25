@@ -5,6 +5,9 @@ from initializations import get_initialization
 
 
 class BaseLayer(object):
+    def __init__(self, random_seed=None):
+        self.random_seed = random_seed
+
     def setup_weights(self, x_shape):
         pass
 
@@ -35,18 +38,19 @@ class FullyConnected(BaseLayer):
     >>> fc.n_params # size of W + size of b
     330
     """
-    def __init__(self, output_dim, init='glorot_uniform', bias=1.0):
+    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', **params):
         self.output_dim = output_dim
-        self.init = get_initialization(init)
         self.bias = bias
+        self.init = get_initialization(init)
         self.W = np.array([]) # weights will be updated by optimizer
         self.b = np.array([])
         self.dW = np.array([]) # dW, db will be used by optimizer
         self.db = np.array([])
         self._last_input = None
+        super(FullyConnected, self).__init__(**params)
 
     def setup_weights(self, x_shape):
-        self.W = self.init(shape=(x_shape[1], self.output_dim))
+        self.W = self.init(shape=(x_shape[1], self.output_dim), random_seed=self.random_seed)
         self.b = np.full(self.W.shape[1], self.bias)
 
     def forward_pass(self, x):
@@ -67,9 +71,10 @@ class FullyConnected(BaseLayer):
 
 
 class Activation(BaseLayer):
-    def __init__(self, activation):
+    def __init__(self, activation, **params):
         self.activation = get_activation(activation)
         self._last_input = None
+        super(Activation, self).__init__(**params)
 
     def forward_pass(self, x):
         self._last_input = x
