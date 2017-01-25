@@ -83,6 +83,25 @@ def one_hot(y):
     return np.eye(n_classes)[y]
 
 
+def one_hot_decision_function(y):
+    """
+    Examples
+    --------
+    >>> y = [[0.1, 0.4, 0.5],
+    ...      [0.8, 0.1, 0.1],
+    ...      [0.2, 0.2, 0.6],
+    ...      [0.3, 0.4, 0.3]]
+    >>> one_hot_decision_function(y)
+    array([[ 0.,  0.,  1.],
+           [ 1.,  0.,  0.],
+           [ 0.,  0.,  1.],
+           [ 0.,  1.,  0.]])
+    """
+    z = np.zeros_like(y)
+    z[np.arange(len(z)), np.argmax(y, axis=1)] = 1
+    return z
+
+
 def unhot(y):
     """
     Map `y` from one-hot encoding to {0, ..., `n_classes` - 1}.

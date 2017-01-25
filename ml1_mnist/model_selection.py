@@ -154,6 +154,8 @@ class TrainTestSplitter(object):
         # group indices
         labels_indices = {}
         for index, label in enumerate(y):
+            if isinstance(label, np.ndarray):
+                label = tuple(label.tolist())
             if not label in labels_indices:
                 labels_indices[label] = []
             labels_indices[label].append(index)

@@ -6,34 +6,36 @@ from layers import FullyConnected, Activation
 from metrics import get_metric
 from optimizers import get_optimizer
 from activations import get_activation
-from utils import RNG
+from utils import RNG, one_hot_decision_function
+from model_selection import TrainTestSplitter
 
 
-class NeuralNetwork(BaseEstimator):
-    def __init__(self, layers, batch_size=128,
+class NNClassifier(BaseEstimator):
+    def __init__(self, layers, n_batches=10,
                  loss='categorical_crossentropy', metric='accuracy_score',
                  optimizer='adam', optimizer_params={},
                  shuffle=True, random_seed=None):
         self.layers = layers
         self._n_layers = len(self.layers)
-        self.batch_size = batch_size
+        self.n_batches = n_batches # mini-batches will be generated in the stratified manner
         self.loss = loss
         if self.loss == 'categorical_crossentropy':
             self._loss_grad = lambda actual, predicted: -(actual - predicted)
         self._loss = get_metric(self.loss)
         self.metric = metric
+        self._metric = get_metric(self.metric)
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
         self._optimizer = get_optimizer(self.optimizer, **self.optimizer_params)
         self._initialized = False
         self._training = False
-        super(NeuralNetwork, self).__init__(_y_required=True) # TODO: split into multiple NNs later
+        self._tts = TrainTestSplitter(shuffle=True, random_seed=random_seed)
+        super(NNClassifier, self).__init__(_y_required=True) # TODO: split into multiple NNs later
 
     def _setup_layers(self, X_shape):
-        x_shape = [self.batch_size] + list(X_shape[1:])
         for layer in self.layers:
-            layer.setup_weights(x_shape) # allocate and initialize
-            x_shape = layer.shape(prev_shape=x_shape) # forward propagate shape
+            layer.setup_weights(X_shape) # allocate and initialize
+            X_shape = layer.shape(prev_shape=X_shape) # forward propagate shape
         self._initialized = True
         print "Total number of parameters: ", self.n_params
 
@@ -42,6 +44,15 @@ class NeuralNetwork(BaseEstimator):
         for layer in self.layers:
             Z = layer.forward_pass(Z)
         return Z
+
+    def parametric_layers(self):
+        for layer in self.layers:
+            if hasattr(layer, 'W'):  # TODO: fix
+                yield layer
+
+    def batch_iter(self):
+        for indices in self._tts.make_k_folds(self._y, n_folds=self.n_batches, stratify=True):
+            yield self._X[indices], self._y[indices]
 
     def update(self, X_batch, y_batch):
         # forward pass
@@ -53,18 +64,38 @@ class NeuralNetwork(BaseEstimator):
             grad = layer.backward_pass(grad)
         return self._loss(y_batch, y_pred)
 
-
-    def _fit(self, X, y):
+    def _fit(self, X, y, X_val=None, y_val=None):
         if y.ndim == 1:
             y = y[:, np.newaxis]
         if not self._initialized:
             self._setup_layers(X.shape)
+        self._X_val = X_val
+        self._y_val = y_val
         self._training = True
-        # TODO: pass to optimizer
+        self._optimizer.optimize(self)
         self._training = False
 
-    def _predict(self, X):
-        pass
+    def validate_proba(self, X=None): # can be called during training
+        if self._training:
+            self._training = False
+        if X is None:
+            y_pred = self.forward_pass(self._X)
+        else:
+            y_pred = self.forward_pass(X)
+        self._training = True
+        return y_pred
+
+    def validate(self, X=None):
+        y_pred = self.validate_proba(X)
+        return one_hot_decision_function(y_pred)
+
+    def predict_proba(self, X):
+        y_pred = self.forward_pass(self._X)
+        return y_pred
+
+    def predict(self, X):
+        y_pred = self.predict_proba()
+        return one_hot_decision_function(y_pred)
 
     def _serialize(self, params):
         return params
@@ -77,16 +108,21 @@ class NeuralNetwork(BaseEstimator):
         return sum(layer.n_params for layer in self.layers)
 
 
+
 if __name__ == '__main__':
-    nn = NeuralNetwork(layers=[
-        FullyConnected(10),
+    nn = NNClassifier(layers=[
+        FullyConnected(16),
         Activation('leaky_relu'),
-        FullyConnected(2),
+        FullyConnected(10),
         Activation('softmax')
-    ], batch_size=16)
+    ], n_batches=30, random_seed=1337, optimizer_params=dict(max_epochs=2, verbose=True))
     from utils.dataset import load_mnist
+    from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
-    nn.fit(X[:16], y[:16])
+    y = one_hot(y)
+    nn.fit(X, y)
+    # for Xb, yb in nn.batch_iter():
+        # print Xb.shape, yb.shape
     # print nn.layers[0].W.shape
     # print nn.layers[0].b.shape
     # print nn.layers[2].W.shape
