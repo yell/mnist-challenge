@@ -6,11 +6,11 @@ class RNG(np.random.RandomState):
 
     Creates RNG from `seed`:
     If `seed` is None, return default RNG.
-    If `seed` is int, return new RNG instance seeded with it.
+    If `seed` is int or [int], return new RNG instance seeded with it.
 
     Raises
     ------
-    ValueError
+    TypeError
         If `seed` is none from the above.
 
     Examples
@@ -27,8 +27,6 @@ class RNG(np.random.RandomState):
     0.1586839721544656
     """
     def __init__(self, seed=None):
-        if not seed is None and not isinstance(seed, int):
-            raise ValueError("invalid seed: '{0}'".format(seed))
         self._seed = seed
         super(RNG, self).__init__(self._seed)
 
