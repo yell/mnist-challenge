@@ -43,7 +43,8 @@ class NNClassifier(BaseEstimator):
             layer.setup_weights(X_shape) # allocate and initialize
             X_shape = layer.shape(prev_shape=X_shape) # forward propagate shape
         self._initialized = True
-        print "Total number of parameters: ", self.n_params
+        if 'verbose' in self.optimizer_params and self.optimizer_params['verbose']:
+            print "Total number of parameters: ", self.n_params
 
     def forward_pass(self, X_batch):
         Z = X_batch
@@ -87,18 +88,22 @@ class NNClassifier(BaseEstimator):
             self._setup_layers(X.shape)
         self._X_val = X_val
         self._y_val = y_val
-        print "Train on {0} samples, validate on {1} samples\n".format(len(X), len(X_val))
+        if 'verbose' in self.optimizer_params and self.optimizer_params['verbose']:
+            print "Train on {0} samples, validate on {1} samples\n".format(len(X), len(X_val))
         self.is_training = True
         self._optimizer.optimize(self)
         self.is_training = False
 
-    def validate_proba(self, X=None): # call during training
-        self.is_training = False
+    def validate_proba(self, X=None): # can be called during training
+        training_phase = self.is_training
+        if training_phase:
+            self.is_training = False
         if X is None:
             y_pred = self.forward_pass(self._X)
         else:
             y_pred = self.forward_pass(X)
-        self.is_training = True
+        if training_phase:
+            self.is_training = True
         return y_pred
 
     def validate(self, X=None):
@@ -148,13 +153,13 @@ if __name__ == '__main__':
         # Activation('leaky_relu'),
         # FullyConnected(256),
         # Activation('leaky_relu'),
-        FullyConnected(2),
-        Activation('leaky_relu'),
+        # FullyConnected(2),
+        # Activation('leaky_relu'),
         # FullyConnected(5),
         # Activation('softmax'),
         FullyConnected(10),
         Activation('softmax')
-    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True, learning_rate=0.1))
+    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')

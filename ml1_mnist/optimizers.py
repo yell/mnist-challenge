@@ -13,9 +13,10 @@ def get_optimizer(optimizer_name, **params):
 
 
 class BaseOptimizer(object):
-    def __init__(self, max_epochs=100, verbose=False):
+    def __init__(self, max_epochs=100, verbose=False, plot=True):
         self.max_epochs = max_epochs
         self.verbose = verbose
+        self.plot = plot
         self.loss_history = []
         self.score_history = []
         self.val_loss_history = []
@@ -66,8 +67,12 @@ class BaseOptimizer(object):
                 # TODO: fix acc.
                 msg += ' - val. acc.: {0}'.format(width_format(val_score, default_width=6, max_precision=4))
             if self.verbose: print msg
-            if self.epoch > 1:
-                plot_learning_curves(self.loss_history, self.score_history, self.val_loss_history, self.val_score_history)
+            if self.epoch > 1 and self.plot:
+                plot_learning_curves(self.loss_history,
+                                     self.score_history,
+                                     self.val_loss_history,
+                                     self.val_score_history,
+                                     dirpath='learning_curves/')
 
 
 class Adam(BaseOptimizer):
