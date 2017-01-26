@@ -126,7 +126,7 @@ if __name__ == '__main__':
         Activation('leaky_relu'),
         FullyConnected(10),
         Activation('softmax')
-    ], n_batches=30, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
+    ], n_batches=30, random_seed=1337, optimizer_params=dict(max_epochs=100, verbose=True))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
