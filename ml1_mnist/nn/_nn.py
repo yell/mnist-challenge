@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 import env
 from base import BaseEstimator
@@ -24,6 +25,7 @@ class NNClassifier(BaseEstimator):
         self.shuffle = shuffle
         self.random_seed = random_seed
 
+        self._best_layers = None
         self._n_layers = len(self.layers)
         self._loss = get_metric(self.loss)
         if self.loss == 'categorical_crossentropy':
@@ -68,6 +70,11 @@ class NNClassifier(BaseEstimator):
         for indices in self._tts.make_k_folds(self._y, n_folds=self.n_batches, stratify=True):
             yield self._X[indices], self._y[indices]
 
+    def _save_best_weights(self):
+        self.is_training = False
+        self._best_layers = deepcopy(self.layers)
+        self.is_training = True
+
     def _fit(self, X, y, X_val=None, y_val=None):
         for k, v in self.optimizer_params.items(): # TODO: implement set_params for optimizers
             setattr(self._optimizer, k, v)
@@ -81,18 +88,17 @@ class NNClassifier(BaseEstimator):
         self._X_val = X_val
         self._y_val = y_val
         print "Train on {0} samples, validate on {1} samples\n".format(len(X), len(X_val))
-        self._training = True
+        self.is_training = True
         self._optimizer.optimize(self)
-        self._training = False
+        self.is_training = False
 
-    def validate_proba(self, X=None): # can be called during training
-        if self._training:
-            self._training = False
+    def validate_proba(self, X=None): # call during training
+        self.is_training = False
         if X is None:
             y_pred = self.forward_pass(self._X)
         else:
             y_pred = self.forward_pass(X)
-        self._training = True
+        self.is_training = True
         return y_pred
 
     def validate(self, X=None):
@@ -100,11 +106,18 @@ class NNClassifier(BaseEstimator):
         return one_hot_decision_function(y_pred)
 
     def predict_proba(self, X):
-        y_pred = self.forward_pass(self._X)
+        # predict on best layers but do not throw away current layers,
+        # potentially, they can be improved during further training
+        if self._best_layers is not None:
+            self.layers, self._best_layers = self._best_layers, self.layers
+            y_pred = self.forward_pass(X)
+            self.layers, self._best_layers = self._best_layers, self.layers
+        else:
+            y_pred = self.forward_pass(X)
         return y_pred
 
     def predict(self, X):
-        y_pred = self.predict_proba()
+        y_pred = self.predict_proba(X)
         return one_hot_decision_function(y_pred)
 
     def _serialize(self, params):
@@ -117,21 +130,31 @@ class NNClassifier(BaseEstimator):
     def n_params(self):
         return sum(layer.n_params for layer in self.layers)
 
+    @property
+    def is_training(self):
+        return self._training
+
+    @is_training.setter
+    def is_training(self, value):
+        self._training = value
+        for layer in self.layers:
+            if hasattr(layer, 'is_training'): # TODO: more generic solution
+                layer.is_training = value
 
 
 if __name__ == '__main__':
     nn = NNClassifier(layers=[
-        # FullyConnected(2500),
-        # Activation('leaky_relu'),
-        FullyConnected(256),
-        Activation('leaky_relu'),
         # FullyConnected(1000),
-        # Activation('softmax'),
-        FullyConnected(128),
+        # Activation('leaky_relu'),
+        # FullyConnected(256),
+        # Activation('leaky_relu'),
+        FullyConnected(2),
         Activation('leaky_relu'),
+        # FullyConnected(5),
+        # Activation('softmax'),
         FullyConnected(10),
         Activation('softmax')
-    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=5, verbose=True))
+    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True, learning_rate=0.1))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
@@ -139,5 +162,7 @@ if __name__ == '__main__':
     train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y, train_ratio=0.85)
     y = one_hot(y)
     nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
-    nn.set_params(optimizer_params=dict(max_epochs=3, verbose=True))
-    nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
+    val_pred = nn.predict(X[test])
+    print get_metric('accuracy_score')(y[test], val_pred)
+    # nn.set_params(optimizer_params=dict(max_epochs=3, verbose=True))
+    # nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
