@@ -146,24 +146,7 @@ class NNClassifier(BaseEstimator):
             if hasattr(layer, 'is_training'): # TODO: more generic solution
                 layer.is_training = value
 
-
-if __name__ == '__main__':
-    nn = NNClassifier(layers=[
-        FullyConnected(512),
-        Activation('leaky_relu'),
-        Dropout(0.2),
-        # FullyConnected(256),
-        # Activation('leaky_relu'),
-        # Dropout(0.2),
-        FullyConnected(10),
-        Activation('softmax')
-    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
-    from utils.dataset import load_mnist
-    from utils import one_hot
-    X, y = load_mnist(mode='train', path='../../data/')
-    X /= 255.
-    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y, train_ratio=0.85)
-    y = one_hot(y)
-    nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
-    val_pred = nn.predict(X[test])
-    print get_metric('accuracy_score')(y[test], val_pred)
+    def _max_norm_update(self):
+        for layer in self.layers:
+            if hasattr(layer, 'max_norm'):
+                layer._max_norm_update()

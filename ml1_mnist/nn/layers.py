@@ -40,18 +40,24 @@ class FullyConnected(BaseLayer):
     >>> fc.n_params # size of W + size of b
     330
     """
-    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L1=0.0, L2=0.0, **params):
+    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L1=0.0, L2=0.0, max_norm=-1, **params):
         self.output_dim = output_dim
         self.bias = bias
         self.init = get_initialization(init)
         self.L1 = L1
         self.L2 = L2
+        self.max_norm = max_norm
         self.W = np.array([]) # weights will be updated by optimizer
         self.b = np.array([])
         self.dW = np.array([]) # dW, db will be used by optimizer
         self.db = np.array([])
         self._last_input = None
         super(FullyConnected, self).__init__(**params)
+
+    def _max_norm_update(self):
+        L = np.linalg.norm(self.W, np.inf)
+        if L > self.max_norm > 0:
+            self.W *= self.max_norm / L
 
     def setup_weights(self, x_shape):
         self.W = self.init(shape=(x_shape[1], self.output_dim), random_seed=self.random_seed)

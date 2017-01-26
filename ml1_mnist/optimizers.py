@@ -37,7 +37,7 @@ class BaseOptimizer(object):
             if self.verbose: print_inline('.')
             loss = np.mean(nnet.update(X_batch, y_batch))
             self.update(nnet)
-            # TODO: update for maxnorm here
+            nnet._max_norm_update()
             losses.append(loss)
         if self.verbose: print
         return losses # epoch losses
