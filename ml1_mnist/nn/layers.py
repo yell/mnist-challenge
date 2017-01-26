@@ -38,10 +38,11 @@ class FullyConnected(BaseLayer):
     >>> fc.n_params # size of W + size of b
     330
     """
-    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', **params):
+    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L2=0.0, **params):
         self.output_dim = output_dim
         self.bias = bias
         self.init = get_initialization(init)
+        self.L2 = L2
         self.W = np.array([]) # weights will be updated by optimizer
         self.b = np.array([])
         self.dW = np.array([]) # dW, db will be used by optimizer
@@ -58,7 +59,7 @@ class FullyConnected(BaseLayer):
         return np.dot(x, self.W) + self.b
 
     def backward_pass(self, residual):
-        self.dW = np.dot(self._last_input.T, residual)
+        self.dW = np.dot(self._last_input.T, residual) + self.L2 * self.W
         self.db = np.sum(residual, axis=0)
         return np.dot(residual, self.W.T)
 

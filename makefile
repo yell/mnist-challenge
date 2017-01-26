@@ -1,8 +1,8 @@
 test:
 	nosetests
-	rm -rf 'knn.json'
-	rm -rf 'knn/knn.json'
-	rm -rf 'decomposition/pca.json'
+	rm -rf 'ml1_mnist/knn.json'
+	rm -rf 'ml1_mnist/knn/knn.json'
+	rm -rf 'ml1_mnist/decomposition/pca.json'
 
 clean:
 	find . -name '*.pyc' -type f -delete
@@ -10,4 +10,4 @@ clean:
 	rm -rf cover/
 	rm -rf .coverage
 	rm -rf cv_models/*
-	rm -rf 'nn/epoch*.png'
+	rm -rf ml1_mnist/nn/epoch*.png

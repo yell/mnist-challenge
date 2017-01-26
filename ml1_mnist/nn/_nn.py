@@ -149,25 +149,17 @@ class NNClassifier(BaseEstimator):
 
 if __name__ == '__main__':
     nn = NNClassifier(layers=[
-        # FullyConnected(1000),
-        # Activation('leaky_relu'),
-        # FullyConnected(256),
-        # Activation('leaky_relu'),
-        # FullyConnected(2),
-        # Activation('leaky_relu'),
-        # FullyConnected(5),
-        # Activation('softmax'),
-        FullyConnected(10),
+        FullyConnected(64, L2=0.5),
+        Activation('leaky_relu'),
+        FullyConnected(10, L2=0.1),
         Activation('softmax')
-    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
+    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=30, verbose=True))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
     X /= 255.
-    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y, train_ratio=0.85)
+    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y[:1000], train_ratio=0.85)
     y = one_hot(y)
     nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
     val_pred = nn.predict(X[test])
     print get_metric('accuracy_score')(y[test], val_pred)
-    # nn.set_params(optimizer_params=dict(max_epochs=3, verbose=True))
-    # nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
