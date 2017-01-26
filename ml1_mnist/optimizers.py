@@ -16,6 +16,12 @@ class BaseOptimizer(object):
     def __init__(self, max_epochs=100, verbose=False):
         self.max_epochs = max_epochs
         self.verbose = verbose
+        self.loss_history = []
+        self.score_history = []
+        self.val_loss_history = []
+        self.val_score_history = []
+        self.epoch = 0
+        self.total_epochs = 0
 
     def _setup(self, nnet):
         pass
@@ -35,34 +41,31 @@ class BaseOptimizer(object):
         return losses # epoch losses
 
     def optimize(self, nnet):
-        loss_history = []
-        score_history = []
-        val_loss_history = []
-        val_score_history = []
         timer = Stopwatch(verbose=False).start()
+        self.total_epochs += self.max_epochs
         for i in xrange(self.max_epochs):
+            self.epoch += 1
             if self.verbose:
-                print_inline('Epoch {0:>{1}}/{2} '.format(i + 1, len(str(self.max_epochs)), self.max_epochs))
+                print_inline('Epoch {0:>{1}}/{2} '.format(self.epoch, len(str(self.total_epochs)), self.total_epochs))
             losses = self.train_epoch(nnet)
-            loss_history.append(losses)
+            self.loss_history.append(losses)
             msg = 'elapsed: {0} sec'.format(width_format(timer.elapsed(), default_width=5, max_precision=2))
             msg += ' - loss: {0}'.format(width_format(np.mean(losses), default_width=5, max_precision=4))
             score = nnet._metric(nnet._y, nnet.validate())
-            score_history.append(score)
+            self.score_history.append(score)
             # TODO: change acc to metric name
             msg += ' - acc.: {0}'.format(width_format(score, default_width=6, max_precision=4))
             if nnet._X_val is not None:
                 val_loss = nnet._loss(nnet._y_val, nnet.validate_proba(nnet._X_val))
-                val_loss_history.append(val_loss)
+                self.val_loss_history.append(val_loss)
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
-                val_score_history.append(val_score)
+                self.val_score_history.append(val_score)
                 msg += ' - val. loss: {0}'.format(width_format(val_loss, default_width=5, max_precision=4))
                 # TODO: fix acc.
                 msg += ' - val. acc.: {0}'.format(width_format(val_score, default_width=6, max_precision=4))
             if self.verbose: print msg
-            if i > 0:
-                plot_learning_curves(loss_history, score_history, val_loss_history, val_score_history)
-        return loss_history, score_history, val_loss_history, val_score_history
+            if self.epoch > 1:
+                plot_learning_curves(self.loss_history, self.score_history, self.val_loss_history, self.val_score_history)
 
 
 class Adam(BaseOptimizer):
