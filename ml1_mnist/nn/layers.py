@@ -2,6 +2,8 @@ import numpy as np
 
 from activations import get_activation
 from initializations import get_initialization
+import env
+from utils import RNG
 
 
 class BaseLayer(object):
@@ -38,10 +40,11 @@ class FullyConnected(BaseLayer):
     >>> fc.n_params # size of W + size of b
     330
     """
-    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L2=0.0, **params):
+    def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L1=0.0, L2=0.0, **params):
         self.output_dim = output_dim
         self.bias = bias
         self.init = get_initialization(init)
+        self.L1 = L1
         self.L2 = L2
         self.W = np.array([]) # weights will be updated by optimizer
         self.b = np.array([])
@@ -59,7 +62,7 @@ class FullyConnected(BaseLayer):
         return np.dot(x, self.W) + self.b
 
     def backward_pass(self, residual):
-        self.dW = np.dot(self._last_input.T, residual) + self.L2 * self.W
+        self.dW = np.dot(self._last_input.T, residual) + self.L2 * self.W + self.L1 * np.sign(self.W)
         self.db = np.sum(residual, axis=0)
         return np.dot(residual, self.W.T)
 
@@ -83,6 +86,30 @@ class Activation(BaseLayer):
 
     def backward_pass(self, residual):
         return self.activation(self._last_input, derivative=True) * residual
+
+
+class Dropout(BaseLayer):
+    """
+    Randomly set a fraction of `p` inputs to 0
+    at each training update.
+    """
+    def __init__(self, p=0.2, **params):
+        self.p = p
+        self.is_training = True
+        self._mask = None
+        super(Dropout, self).__init__(**params)
+
+    def forward_pass(self, X):
+        assert self.p > 0
+        if self.is_training:
+            self._mask = RNG(self.random_seed).uniform(size=X.shape) > self.p
+            Z = self._mask * X
+        else: # to keep output of the same scale (on average)
+            Z = (1.0 - self.p) * X
+        return Z
+
+    def backward_pass(self, residual):
+        return self._mask * residual
 
 
 # aliases

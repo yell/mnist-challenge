@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import env
 from base import BaseEstimator
-from layers import FullyConnected, Activation
+from layers import FullyConnected, Activation, Dropout
 from metrics import get_metric
 from optimizers import get_optimizer
 from activations import get_activation
@@ -149,16 +149,20 @@ class NNClassifier(BaseEstimator):
 
 if __name__ == '__main__':
     nn = NNClassifier(layers=[
-        FullyConnected(64, L2=0.5),
+        FullyConnected(512),
         Activation('leaky_relu'),
-        FullyConnected(10, L2=0.1),
+        Dropout(0.2),
+        # FullyConnected(256),
+        # Activation('leaky_relu'),
+        # Dropout(0.2),
+        FullyConnected(10),
         Activation('softmax')
-    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=30, verbose=True))
+    ], n_batches=10, random_seed=1337, optimizer_params=dict(max_epochs=10, verbose=True))
     from utils.dataset import load_mnist
     from utils import one_hot
     X, y = load_mnist(mode='train', path='../../data/')
     X /= 255.
-    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y[:1000], train_ratio=0.85)
+    train, test = TrainTestSplitter(shuffle=True, random_seed=1337).split(y, train_ratio=0.85)
     y = one_hot(y)
     nn.fit(X[train], y[train], X_val=X[test], y_val=y[test])
     val_pred = nn.predict(X[test])

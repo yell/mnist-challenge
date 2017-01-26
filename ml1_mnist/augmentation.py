@@ -104,13 +104,13 @@ class RandomGaussian(RandomTransformation):
 
 
 class Dropout(RandomTransformation):
-    def __init__(self, p=(1., 1.), random_seed=None):
+    def __init__(self, p=(0., 0.), random_seed=None):
         self.p = p
         super(Dropout, self).__init__(random_seed=random_seed)
 
     def _call(self, x):
         p = self.rng.uniform(self.p[0], self.p[1])
-        mask = self.rng.binomial(n=1, p=p, size=x.shape)
+        mask = self.rng.uniform(size=x.shape) > p
         mask = mask * (x.max() - x.min()) + x.min()
         return np.minimum(x, mask)
 
