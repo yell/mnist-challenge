@@ -13,10 +13,11 @@ def get_optimizer(optimizer_name, **params):
 
 
 class BaseOptimizer(object):
-    def __init__(self, max_epochs=100, verbose=False, plot=True):
+    def __init__(self, max_epochs=100, verbose=False, plot=True, plot_dirpath='learning_curves/'):
         self.max_epochs = max_epochs
         self.verbose = verbose
         self.plot = plot
+        self.plot_dirpath = plot_dirpath
         self.loss_history = []
         self.score_history = []
         self.val_loss_history = []
@@ -73,7 +74,7 @@ class BaseOptimizer(object):
                                      self.score_history,
                                      self.val_loss_history,
                                      self.val_score_history,
-                                     dirpath='learning_curves/')
+                                     dirpath=self.plot_dirpath)
 
 
 class Adam(BaseOptimizer):

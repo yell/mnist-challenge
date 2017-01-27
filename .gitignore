@@ -3,6 +3,9 @@ ml1_mnist/.idea/*
 .ipynb_checkpoints/*
 data/*.idx1-ubyte
 data/*.idx3-ubyte
+data/*.npy
 report/*.txt
 *.pyc
 *.json
+ml1_mnist/nn/learning_curves/*
+learning_curves/*

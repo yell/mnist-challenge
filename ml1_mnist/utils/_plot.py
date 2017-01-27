@@ -86,7 +86,7 @@ def plot_learning_curves(l, a, vl, va, last_epochs=64, dirpath='.'):
 
     Ls = L1 + L2 + L3 + L4
     labs = [l.get_label() for l in Ls]
-    leg = plt.legend(Ls, labs, loc=0, fontsize=18, frameon=True)
+    leg = plt.legend(Ls, labs, loc='lower left', fontsize=18, frameon=True)
     leg.get_frame().set_edgecolor('k')
     leg.get_frame().set_linewidth(2)
 

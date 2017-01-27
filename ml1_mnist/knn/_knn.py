@@ -179,7 +179,7 @@ class KNNClassifier(BaseEstimator):
             distances = distances[indices]
 
         elif self.algorithm == 'kd_tree':
-            distances, indices = self.kd_tree_.query(x, k=k, p=self.p, n_jobs=-1)
+            distances, indices = self.kd_tree_.query(x, k=k, p=self.p, n_jobs=-2)
 
         return indices, distances
 
