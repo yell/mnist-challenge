@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from collections import defaultdict
 
@@ -81,12 +82,13 @@ class BaseOptimizer(object):
                     return
             if self.verbose: print msg
             if self.epoch > 1 and self.plot:
+                if not os.path.exists(self.plot_dirpath):
+                    os.makedirs(self.plot_dirpath)
                 plot_learning_curves(self.loss_history,
                                      self.score_history,
                                      self.val_loss_history,
                                      self.val_score_history,
                                      dirpath=self.plot_dirpath)
-
 
 
 class Adam(BaseOptimizer):
