@@ -58,9 +58,17 @@ class LogisticRegression(BaseEstimator):
         return self._nnet.predict(X)
 
     def _serialize(self, params):
+        nn_params = self._nnet.get_params(deep=False)
+        nn_params = self._nnet._serialize(nn_params)
+        params['_nnet'] = nn_params
         return params
 
     def _deserialize(self, params):
+        nn = NNClassifier()
+        nn_params = params['_nnet']
+        nn_params = nn._deserialize(nn_params)
+        nn.set_params(**nn_params)
+        self._nnet = nn
         return params
 
 
@@ -68,17 +76,30 @@ if __name__ == '__main__':
     import env
     from utils.dataset import load_mnist
     from utils import one_hot
+    from utils.read_write import load_model
     X, y = load_mnist(mode='train', path='../../data/')
     X /= 255.
-    logreg = LogisticRegression(n_batches=10,
+    logreg = LogisticRegression(n_batches=100,
                                 random_seed=1337,
                                 optimizer_params=dict(
-                                    max_epochs=10,
-                                    learning_rate=1e-3,
+                                    max_epochs=19,
+                                    learning_rate=1e-4,
+                                    # verbose=True,
+                                    early_stopping=3,
                                     plot=False)
                                 )
     y = one_hot(y)
     logreg.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
-    logreg.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
+    # logreg.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
     y_pred = logreg.predict(X[1000:2000])
     print logreg._nnet._metric(y_pred, y[1000:2000])
+    print logreg._nnet.best_epoch_
+    logreg.save('logreg.json')
+    logreg_loaded = load_model('logreg.json').fit(X[:1000], y[:1000])
+    y_pred = logreg_loaded.predict(X[1000:2000])
+    print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
+    print logreg_loaded._nnet.best_epoch_
+    logreg_loaded.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
+    y_pred = logreg_loaded.predict(X[1000:2000])
+    print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
+    print logreg_loaded._nnet.best_epoch_

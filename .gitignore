@@ -9,3 +9,5 @@ report/*.txt
 *.json
 ml1_mnist/nn/learning_curves/*
 learning_curves/*
+*.png
+models/*

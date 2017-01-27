@@ -27,6 +27,7 @@ class NNClassifier(BaseEstimator):
 
         self.best_layers_ = None
         self.best_epoch_ = None
+        self.best_val_score_ = 0.
         self.n_layers_ = len(self.layers)
 
         self._loss = get_metric(self.loss)
