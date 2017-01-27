@@ -13,8 +13,10 @@ def get_optimizer(optimizer_name, **params):
 
 
 class BaseOptimizer(object):
-    def __init__(self, max_epochs=100, verbose=False, plot=True, plot_dirpath='learning_curves/'):
+    def __init__(self, max_epochs=100, early_stopping=None, verbose=False, plot=True, plot_dirpath='learning_curves/'):
         self.max_epochs = max_epochs
+        self.early_stopping = early_stopping # reset to this value when new best layers are found
+        self._early_stopping = self.early_stopping # current number of epochs to stop
         self.verbose = verbose
         self.plot = plot
         self.plot_dirpath = plot_dirpath
@@ -50,6 +52,8 @@ class BaseOptimizer(object):
             self.epoch += 1
             if self.verbose:
                 print_inline('Epoch {0:>{1}}/{2} '.format(self.epoch, len(str(self.total_epochs)), self.total_epochs))
+            if self.verbose and self.early_stopping and nnet._X_val is not None:
+                print_inline(' early stopping after {0} '.format(self._early_stopping))
             losses = self.train_epoch(nnet)
             self.loss_history.append(losses)
             msg = 'elapsed: {0} sec'.format(width_format(timer.elapsed(), default_width=5, max_precision=2))
@@ -59,16 +63,22 @@ class BaseOptimizer(object):
             # TODO: change acc to metric name
             msg += ' - acc.: {0}'.format(width_format(score, default_width=6, max_precision=4))
             if nnet._X_val is not None:
+                if self._early_stopping > 0:
+                    self._early_stopping -= 1
                 val_loss = nnet._loss(nnet._y_val, nnet.validate_proba(nnet._X_val))
                 self.val_loss_history.append(val_loss)
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
                 if self.epoch > 1 and val_score > max(self.val_score_history):
                     nnet._save_best_weights()
                     nnet.best_epoch_ = self.epoch # TODO move to optimizer
+                    self._early_stopping = self.early_stopping # reset counter
                 self.val_score_history.append(val_score)
                 msg += ' - val. loss: {0}'.format(width_format(val_loss, default_width=5, max_precision=4))
                 # TODO: fix acc.
                 msg += ' - val. acc.: {0}'.format(width_format(val_score, default_width=6, max_precision=4))
+                if self._early_stopping == 0:
+                    if self.verbose: print msg
+                    return
             if self.verbose: print msg
             if self.epoch > 1 and self.plot:
                 plot_learning_curves(self.loss_history,
@@ -76,6 +86,7 @@ class BaseOptimizer(object):
                                      self.val_loss_history,
                                      self.val_score_history,
                                      dirpath=self.plot_dirpath)
+
 
 
 class Adam(BaseOptimizer):
