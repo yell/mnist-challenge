@@ -6,8 +6,10 @@ import env
 from utils import RNG
 
 
+# TODO: load_layer function
+
 class BaseLayer(object):
-    def __init__(self, random_seed=None):
+    def __init__(self, random_seed=None, **params):
         self.random_seed = random_seed
 
     def setup_weights(self, x_shape):
@@ -21,6 +23,9 @@ class BaseLayer(object):
 
     def shape(self, prev_shape):
         return prev_shape
+
+    def _serialize(self):
+        return {}
 
     @property
     def n_params(self):
@@ -43,6 +48,7 @@ class FullyConnected(BaseLayer):
     def __init__(self, output_dim, bias=1.0, init='glorot_uniform', L1=0.0, L2=0.0, max_norm=-1, **params):
         self.output_dim = output_dim
         self.bias = bias
+        self.init_name = init
         self.init = get_initialization(init)
         self.L1 = L1
         self.L2 = L2
@@ -79,10 +85,26 @@ class FullyConnected(BaseLayer):
     def n_params(self):
         return np.size(self.W) + np.size(self.b)
 
+    def _serialize(self):
+        return dict(
+            layer='fully_connected',
+            random_seed=self.random_seed,
+            output_dim=self.output_dim,
+            bias=self.bias,
+            init=self.init_name,
+            L1=self.L1,
+            L2=self.L2,
+            max_norm=self.max_norm,
+            W=self.W.tolist(),
+            b=self.b.tolist(),
+            dW=self.dW.tolist(),
+            db=self.db.tolist(),
+        )
 
 class Activation(BaseLayer):
     def __init__(self, activation, **params):
-        self.activation = get_activation(activation)
+        self.activation_name = activation
+        self.activation = get_activation(self.activation_name)
         self._last_input = None
         super(Activation, self).__init__(**params)
 
@@ -93,6 +115,13 @@ class Activation(BaseLayer):
     def backward_pass(self, residual):
         return self.activation(self._last_input, derivative=True) * residual
 
+    def _serialize(self):
+        return dict(
+            layer='activation',
+            random_seed=self.random_seed,
+            activation=self.activation_name,
+        )
+
 
 class Dropout(BaseLayer):
     """
@@ -101,7 +130,7 @@ class Dropout(BaseLayer):
     """
     def __init__(self, p=0.2, **params):
         self.p = p
-        self.is_training = True
+        self.is_training = False
         self._mask = None
         super(Dropout, self).__init__(**params)
 
@@ -110,17 +139,20 @@ class Dropout(BaseLayer):
         if self.is_training:
             self._mask = RNG(self.random_seed).uniform(size=X.shape) > self.p
             Z = self._mask * X
-        else: # to keep output of the same scale (on average)
-            Z = (1.0 - self.p) * X
+        else:
+            Z = (1.0 - self.p) * X # to keep output of the same scale (on average)
         return Z
 
     def backward_pass(self, residual):
         return self._mask * residual
 
+    def _serialize(self):
+        return dict(
+            layer='dropout',
+            random_seed=self.random_seed,
+            p=self.p,
+        )
+
 
 # aliases
 Dense = FullyConnected
-
-
-if __name__ == '__main__':
-    pass

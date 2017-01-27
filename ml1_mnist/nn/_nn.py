@@ -12,7 +12,7 @@ from model_selection import TrainTestSplitter
 
 
 class NNClassifier(BaseEstimator):
-    def __init__(self, layers, n_batches=10,
+    def __init__(self, layers=[], n_batches=10,
                  loss='categorical_crossentropy', metric='accuracy_score',
                  optimizer='adam', optimizer_params={},
                  shuffle=True, random_seed=None):
@@ -25,8 +25,9 @@ class NNClassifier(BaseEstimator):
         self.shuffle = shuffle
         self.random_seed = random_seed
 
-        self._best_layers = None
-        self._n_layers = len(self.layers)
+        self.best_layers_ = None
+        self.n_layers_ = len(self.layers)
+
         self._loss = get_metric(self.loss)
         if self.loss == 'categorical_crossentropy':
             self._loss_grad = lambda actual, predicted: -(actual - predicted)
@@ -73,7 +74,7 @@ class NNClassifier(BaseEstimator):
 
     def _save_best_weights(self):
         self.is_training = False
-        self._best_layers = deepcopy(self.layers)
+        self.best_layers_ = deepcopy(self.layers)
         self.is_training = True
 
     def _fit(self, X, y, X_val=None, y_val=None):
@@ -113,10 +114,10 @@ class NNClassifier(BaseEstimator):
     def predict_proba(self, X):
         # predict on best layers but do not throw away current layers,
         # potentially, they can be improved during further training
-        if self._best_layers is not None:
-            self.layers, self._best_layers = self._best_layers, self.layers
+        if self.best_layers_ is not None:
+            self.layers, self.best_layers_ = self.best_layers_, self.layers
             y_pred = self.forward_pass(X)
-            self.layers, self._best_layers = self._best_layers, self.layers
+            self.layers, self.best_layers_ = self.best_layers_, self.layers
         else:
             y_pred = self.forward_pass(X)
         return y_pred
@@ -124,12 +125,6 @@ class NNClassifier(BaseEstimator):
     def predict(self, X):
         y_pred = self.predict_proba(X)
         return one_hot_decision_function(y_pred)
-
-    def _serialize(self, params):
-        return params
-
-    def _deserialize(self, params):
-        return params
 
     @property
     def n_params(self):
@@ -150,3 +145,40 @@ class NNClassifier(BaseEstimator):
         for layer in self.layers:
             if hasattr(layer, 'max_norm'):
                 layer._max_norm_update()
+
+    # TODO: temporary solutions below, need more generic
+    def _serialize(self, params):
+        # serialize current layers
+        layers_serialization = []
+        for layer in self.layers:
+            layers_serialization.append(layer._serialize())
+        params['layers'] = layers_serialization
+
+        # serialize best layers
+        if self.best_layers_ is not None:
+            best_layers_serialization = []
+            for layer in self.best_layers_:
+                best_layers_serialization.append(layer._serialize())
+            params['best_layers_'] = best_layers_serialization
+
+        return params
+
+    def _deserialize(self, params):
+        layers_attrs = ['layers']
+        if params['best_layers_']:
+            layers_attrs.append('best_layers_')
+
+        for layers_attr in layers_attrs:
+            for i, layer_dict in enumerate(params[layers_attr]):
+                if layer_dict['layer'] == 'activation':
+                    params[layers_attr][i] = Activation(**layer_dict)
+                if layer_dict['layer'] == 'dropout':
+                    params[layers_attr][i] = Dropout(**layer_dict)
+                if layer_dict['layer'] == 'fully_connected':
+                    fc = FullyConnected(**layer_dict)
+                    fc.W = np.asarray(layer_dict['W'])
+                    fc.b = np.asarray(layer_dict['b'])
+                    fc.dW = np.asarray(layer_dict['dW'])
+                    fc.db = np.asarray(layer_dict['db'])
+                    params[layers_attr][i] = fc
+        return params
