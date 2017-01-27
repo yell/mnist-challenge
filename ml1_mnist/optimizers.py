@@ -64,6 +64,7 @@ class BaseOptimizer(object):
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
                 if self.epoch > 1 and val_score > max(self.val_score_history):
                     nnet._save_best_weights()
+                    nnet.best_epoch_ = self.epoch # TODO move to optimizer
                 self.val_score_history.append(val_score)
                 msg += ' - val. loss: {0}'.format(width_format(val_loss, default_width=5, max_precision=4))
                 # TODO: fix acc.
