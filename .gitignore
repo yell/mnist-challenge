@@ -11,3 +11,5 @@ ml1_mnist/nn/learning_curves/*
 learning_curves/*
 *.png
 models/*
+tmp/*
+run_*.py

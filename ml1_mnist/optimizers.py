@@ -64,7 +64,7 @@ class BaseOptimizer(object):
             # TODO: change acc to metric name
             msg += ' - acc.: {0}'.format(width_format(score, default_width=6, max_precision=4))
             if nnet._X_val is not None:
-                if self._early_stopping > 0:
+                if self._early_stopping > 0 and self.epoch > 1:
                     self._early_stopping -= 1
                 val_loss = nnet._loss(nnet._y_val, nnet.validate_proba(nnet._X_val))
                 self.val_loss_history.append(val_loss)
