@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 
 from utils.read_write import save_model
+from metrics import get_metric
 
 
 def is_param_name(name):
@@ -191,6 +192,10 @@ class BaseEstimator(object):
             return self._predict(X, **predict_params)
         else:
             raise ValueError('`fit` must be called before calling `predict`')
+
+    def evaluate(self, X, y_true, metric='accuracy_score'):
+        y_pred = self.predict(X)
+        return get_metric(metric)(y_true, y_pred)
 
     def model_name(self):
         return self.__class__.__name__

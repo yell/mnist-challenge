@@ -84,22 +84,24 @@ if __name__ == '__main__':
                                 optimizer_params=dict(
                                     max_epochs=19,
                                     learning_rate=1e-4,
-                                    # verbose=True,
+                                    verbose=True,
                                     early_stopping=3,
                                     plot=False)
                                 )
     y = one_hot(y)
     logreg.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
     # logreg.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
-    y_pred = logreg.predict(X[1000:2000])
-    print logreg._nnet._metric(y_pred, y[1000:2000])
-    print logreg._nnet.best_epoch_
-    logreg.save('logreg.json')
-    logreg_loaded = load_model('logreg.json').fit(X[:1000], y[:1000])
-    y_pred = logreg_loaded.predict(X[1000:2000])
-    print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
-    print logreg_loaded._nnet.best_epoch_
-    logreg_loaded.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
-    y_pred = logreg_loaded.predict(X[1000:2000])
-    print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
-    print logreg_loaded._nnet.best_epoch_
+    print logreg.evaluate(X[1000:2000], y[1000:2000], 'accuracy_score')
+    print logreg.evaluate(X[1000:2000], y[1000:2000], 'zero_one_loss')
+    # y_pred = logreg.predict(X[1000:2000])
+    # print logreg._nnet._metric(y_pred, y[1000:2000])
+    # print logreg._nnet.best_epoch_
+    # logreg.save('logreg.json')
+    # logreg_loaded = load_model('logreg.json').fit(X[:1000], y[:1000])
+    # y_pred = logreg_loaded.predict(X[1000:2000])
+    # print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
+    # print logreg_loaded._nnet.best_epoch_
+    # logreg_loaded.fit(X[:1000], y[:1000], X_val=X[1000:2000], y_val=y[1000:2000])
+    # y_pred = logreg_loaded.predict(X[1000:2000])
+    # print logreg_loaded._nnet._metric(y_pred, y[1000:2000])
+    # print logreg_loaded._nnet.best_epoch_
