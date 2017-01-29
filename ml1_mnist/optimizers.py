@@ -69,12 +69,14 @@ class BaseOptimizer(object):
                 val_loss = nnet._loss(nnet._y_val, nnet.validate_proba(nnet._X_val))
                 self.val_loss_history.append(val_loss)
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
+                if self.epoch > 1 and val_score < 0.2 * self.val_score_history[-1]:
+                	return
+                self.val_score_history.append(val_score)
                 if self.epoch > 1 and val_score > nnet.best_val_score_:
                     nnet.best_val_score_ = val_score
                     nnet.best_epoch_ = self.epoch  # TODO move to optimizer
                     nnet._save_best_weights()
                     self._early_stopping = self.early_stopping # reset counter
-                self.val_score_history.append(val_score)
                 msg += ' - val. loss: {0}'.format(width_format(val_loss, default_width=5, max_precision=4))
                 # TODO: fix acc.
                 msg += ' - val. acc.: {0}'.format(width_format(val_score, default_width=6, max_precision=4))

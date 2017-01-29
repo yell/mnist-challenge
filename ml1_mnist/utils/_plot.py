@@ -61,10 +61,11 @@ def plot_learning_curves(l, a, vl, va, last_epochs=64, dirpath='.'):
     # ax.plot(x, l_mean, color='r', lw=2, marker='o', label='training loss mean')
     L2 = ax.plot(x, vl, color='#e6155a', lw=2, marker='o', label='validation loss')
     ax.set_ylim([0., max(1.0, max(max(l[1:])), max(vl))])
+    ax.set_xlim([1, n_epochs])
 
     L3 = ax2.plot(x, a, color='#124f90', lw=2, marker='o', label='training accuracy')
     L4 = ax2.plot(x, va, color='#6dbb30', lw=2, marker='o', label='validation accuracy')
-    ax2.set_ylim([min(0.7, min(a), min(va)), 1.])
+    ax2.set_ylim([max(0.7, min(min(a), min(va))), 1.])
 
     ax2.spines['left'].set_color('black')
     ax2.spines['left'].set_linewidth(2)

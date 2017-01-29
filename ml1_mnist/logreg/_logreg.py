@@ -69,6 +69,7 @@ class LogisticRegression(BaseEstimator):
         nn_params = nn._deserialize(nn_params)
         nn.set_params(**nn_params)
         self._nnet = nn
+        self._called_fit = True
         return params
 
 
