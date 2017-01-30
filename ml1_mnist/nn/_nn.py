@@ -76,7 +76,8 @@ class NNClassifier(BaseEstimator):
 
     def _save_best_weights(self):
         self.is_training = False
-        self.best_layers_ = deepcopy(self.layers)
+        # self.best_layers_ = deepcopy(self.layers)
+        self.save('tmp/nn_{0}_{1:.4f}.json'.format(self.best_epoch_, self.best_val_score_))
         self.is_training = True
 
     def _fit(self, X, y, X_val=None, y_val=None):
