@@ -97,14 +97,26 @@ class NNClassifier(BaseEstimator):
         self._optimizer.optimize(self)
         self.is_training = False
 
+    def _minibatch_forward_pass(self, X):
+    	y_pred = []
+        batch_size = len(X) / self.n_batches
+        for i in xrange(self.n_batches):
+        	start = i * batch_size
+        	end = start + batch_size
+        	X_batch = X[start:end]
+        	y_pred.append(self.forward_pass(X_batch))
+        if self.n_batches * batch_size < len(X):
+        	y_pred.append(self.forward_pass(X[end:]))
+        return np.concatenate(y_pred)
+
     def validate_proba(self, X=None): # can be called during training
         training_phase = self.is_training
         if training_phase:
             self.is_training = False
         if X is None:
-            y_pred = self.forward_pass(self._X)
+            y_pred = self._minibatch_forward_pass(self._X)
         else:
-            y_pred = self.forward_pass(X)
+            y_pred = self._minibatch_forward_pass(X)
         if training_phase:
             self.is_training = True
         return y_pred
@@ -118,10 +130,11 @@ class NNClassifier(BaseEstimator):
         # potentially, they can be improved during further training
         if self.best_layers_ is not None:
             self.layers, self.best_layers_ = self.best_layers_, self.layers
-            y_pred = self.forward_pass(X)
-            self.layers, self.best_layers_ = self.best_layers_, self.layers
-        else:
-            y_pred = self.forward_pass(X)
+        # split X into batches, forward pass and concat
+        y_pred = self._minibatch_forward_pass(X)
+        # swap layers attrs if needed
+        if self.best_layers_ is not None:
+        	self.layers, self.best_layers_ = self.best_layers_, self.layers
         return y_pred
 
     def predict(self, X):

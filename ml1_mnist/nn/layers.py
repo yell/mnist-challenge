@@ -135,7 +135,7 @@ class Dropout(BaseLayer):
         super(Dropout, self).__init__(**params)
 
     def forward_pass(self, X):
-        assert self.p > 0
+        # assert self.p > 0
         if self.is_training:
             self._mask = RNG(self.random_seed).uniform(size=X.shape) > self.p
             Z = self._mask * X
