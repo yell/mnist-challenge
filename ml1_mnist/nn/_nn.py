@@ -14,7 +14,7 @@ from model_selection import TrainTestSplitter
 class NNClassifier(BaseEstimator):
     def __init__(self, layers=[], n_batches=10,
                  loss='categorical_crossentropy', metric='accuracy_score',
-                 optimizer='adam', optimizer_params={},
+                 optimizer='adam', optimizer_params={}, save_weights=True,
                  shuffle=True, random_seed=None):
         self.layers = layers
         self.n_batches = n_batches # mini-batches will be generated in the stratified manner
@@ -22,6 +22,7 @@ class NNClassifier(BaseEstimator):
         self.metric = metric
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
+        self.save_weights = save_weights
         self.shuffle = shuffle
         self.random_seed = random_seed
 
@@ -75,10 +76,11 @@ class NNClassifier(BaseEstimator):
             yield self._X[indices], self._y[indices]
 
     def _save_best_weights(self):
-        self.is_training = False
-        # self.best_layers_ = deepcopy(self.layers)
-        self.save('tmp/nn_{0}_{1:.4f}.json'.format(self.best_epoch_, self.best_val_score_))
-        self.is_training = True
+        if self.save_weights:
+            self.is_training = False
+            # self.best_layers_ = deepcopy(self.layers)
+            self.save('tmp/nn_{0}_{1:.4f}.json'.format(self.best_epoch_, self.best_val_score_))
+            self.is_training = True
 
     def _fit(self, X, y, X_val=None, y_val=None):
         for k, v in self.optimizer_params.items(): # TODO: implement set_params for optimizers
