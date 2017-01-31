@@ -23,6 +23,7 @@ class NNClassifier(BaseEstimator):
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
         self.save_weights = save_weights
+        self.template = 'tmp/nn_{0}_{1:.4f}.json'
         self.shuffle = shuffle
         self.random_seed = random_seed
 
@@ -79,7 +80,7 @@ class NNClassifier(BaseEstimator):
         if self.save_weights:
             self.is_training = False
             # self.best_layers_ = deepcopy(self.layers)
-            self.save('tmp/nn_{0}_{1:.4f}.json'.format(self.best_epoch_, self.best_val_score_))
+            self.save(self.template.format(self.best_epoch_, self.best_val_score_))
             self.is_training = True
 
     def _fit(self, X, y, X_val=None, y_val=None):
@@ -101,15 +102,15 @@ class NNClassifier(BaseEstimator):
         self.is_training = False
 
     def _minibatch_forward_pass(self, X):
-    	y_pred = []
+        y_pred = []
         batch_size = len(X) / self.n_batches
         for i in xrange(self.n_batches):
-        	start = i * batch_size
-        	end = start + batch_size
-        	X_batch = X[start:end]
-        	y_pred.append(self.forward_pass(X_batch))
+            start = i * batch_size
+            end = start + batch_size
+            X_batch = X[start:end]
+            y_pred.append(self.forward_pass(X_batch))
         if self.n_batches * batch_size < len(X):
-        	y_pred.append(self.forward_pass(X[end:]))
+            y_pred.append(self.forward_pass(X[end:]))
         return np.concatenate(y_pred)
 
     def validate_proba(self, X=None): # can be called during training
@@ -137,7 +138,7 @@ class NNClassifier(BaseEstimator):
         y_pred = self._minibatch_forward_pass(X)
         # swap layers attrs if needed
         if self.best_layers_ is not None:
-        	self.layers, self.best_layers_ = self.best_layers_, self.layers
+            self.layers, self.best_layers_ = self.best_layers_, self.layers
         return y_pred
 
     def predict(self, X):
