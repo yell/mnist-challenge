@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.linalg import cholesky, solve_triangular
+from scipy.sparse.linalg import cg
 
 import env
 from base import BaseEstimator
@@ -39,22 +40,34 @@ class GPClassifier(BaseEstimator):
         Currently only rbf is supported.
     kernel_params : dict, optional
         Initial params of the `kernel`.
+    sigma_n : non-negative float
+        Noise standard deviation.
     max_iter : positive int, optional
         Maximum number of Newton iterations.
     tol : positive float, optional
         Tolerance for approx. LML for Newton iterations.
+    algorithm : {'exact', 'cg'}, optional
+        Algorithm to solve the underlying linear systems.
+    cg_tol : positive float, optional
+        Tolerance for CG if `algorithm` is set to 'cg'.
+    cg_max_iter : positive int, optional
+        Maximum number of iterations for CG
+        if `algorithm` is set to 'cg'.
     random_seed : None or int, optional
         Pseudo-random number generator seed used for random sampling.
 
     Attributes
     ----------
-    K_
+    K_ : (n_samples, n_samples) np.ndarray
         Covariance function.
-    f_ : (n_samples, n_classes)
+    f_ : (n_samples, n_classes) np.ndarray
         Posterior approximation mode.
     lml_ : float
         Approx. log marginal likelihood \log{q(y|X, theta)},
-        where theta are kernel parameters
+        where theta are kernel parameters.
+        Note that if `algorithm` is set to 'cg', lml_ is 2 * log|B|
+        bigger than the actual value (since the latter in this case
+        is not computed).
 
     Examples
     --------
@@ -89,7 +102,7 @@ class GPClassifier(BaseEstimator):
     >>> gp.lml_ #doctest: +ELLIPSIS
     -3.995...
     >>> X_star = [[0., 0.09], [0.3, 0.5], [-3., 4.]]
-    >>> gp.predict_proba(X_star)
+    >>> gp.predict_proba(X_star) # random
     array([[ 0.56107945,  0.43892055],
            [ 0.49808083,  0.50191917],
            [ 0.49546654,  0.50453346]])
@@ -97,6 +110,13 @@ class GPClassifier(BaseEstimator):
     array([[ 1.,  0.],
            [ 0.,  1.],
            [ 0.,  1.]])
+    >>> gp.set_params(algorithm='cg').fit(X, y)
+    >>> gp.predict_proba(X_star) # random
+    array([[ 0.55933235,  0.44066765],
+           [ 0.49784393,  0.50215607],
+           [ 0.49546654,  0.50453346]])
+    >>> gp.lml_ #doctest: +ELLIPSIS
+    -2.441...
 
     >>> from utils.dataset import load_mnist
     >>> from model_selection import TrainTestSplitter as TTS
@@ -106,6 +126,7 @@ class GPClassifier(BaseEstimator):
     (84, 784)
     >>> y = one_hot(y[train])
     >>> X /= 255.
+    >>> gp = GPClassifier(random_seed=1337, kernel_params=dict(sigma=1., gamma=1.))
     >>> pi = softmax(gp.fit(X, y).f_);
     >>> accuracy_score(y, one_hot_decision_function(pi))
     1.0
@@ -115,13 +136,17 @@ class GPClassifier(BaseEstimator):
     -200.76...
     """
 
-    def __init__(self, kernel='rbf', kernel_params={},
-                 max_iter=100, tol=1e-5,
+    def __init__(self, kernel='rbf', kernel_params={}, sigma_n=0.0,
+                 max_iter=100, tol=1e-5, algorithm='exact', cg_tol=1e-5, cg_max_iter=None,
                  n_samples=1000, random_seed=None):
         self.kernel = kernel
         self.kernel_params = kernel_params
+        self.sigma_n = sigma_n
         self.max_iter = max_iter
         self.tol = tol
+        self.algorithm = algorithm
+        self.cg_tol = cg_tol
+        self.cg_max_iter = cg_max_iter
         self.n_samples = n_samples
         self.random_seed = random_seed
 
@@ -129,7 +154,7 @@ class GPClassifier(BaseEstimator):
         self.f_ = None
         self.lml_ = None
 
-        self._E = None
+        self._e = None
         self._M = None
         super(GPClassifier, self).__init__(_y_required=True)
 
@@ -143,8 +168,10 @@ class GPClassifier(BaseEstimator):
         # shortcuts
         C = self._n_outputs
         n = self._n_samples
-        # construct covariance matrix
-        self.K_ = self._kernel(X, X)
+        # construct covariance matrix if needed
+        if self.K_ is None:
+            self.K_ = self._kernel(X, X)
+            self.K_ += self.sigma_n**2 * np.eye(n)
         # init latent function values
         self.f_ = np.zeros_like(y)
 
@@ -153,34 +180,48 @@ class GPClassifier(BaseEstimator):
         while True:
             iter += 1
             if iter > self.max_iter:
-                raise RuntimeError('convergence is not reached')
+                print 'convergence is not reached'
+                return
+
             self.pi_ = softmax(self.f_)
-            z = []
-            self._E = []
-            for c_ in xrange(C):
-                sqrt_d_c = np.sqrt(self.pi_[:, c_])
-                sqrt_D_c = np.diag(sqrt_d_c)
-                # same as I + sqrt_D.dot(K).dot(sqrt_D):
-                _T = np.eye(self._n_samples) + (sqrt_d_c * self.K_.T).T * sqrt_d_c
-                L = cholesky(_T, lower=True, overwrite_a=True)
-                _T2 = solve_triangular(L, sqrt_D_c)
-                E_c = sqrt_D_c.dot(solve_triangular(L, _T2, trans='T'))
-                self._E.append(E_c)
-                z_c = sum(np.log(L.diagonal()))
-                z.append(z_c)
-            self._M = cholesky(sum(self._E), lower=True, overwrite_a=True)
-            D = np.diag(self.pi_.T.reshape(C * n,))
+            D = np.diag(self.pi_.T.reshape(C * n, ))
             Pi = np.vstack((np.diag(self.pi_[:, c_]) for c_ in xrange(C)))
+
+            z = []
+            self._e = []
+            for c_ in xrange(C):
+                # compute E_c
+                sqrt_d_c = np.sqrt(self.pi_[:, c_])
+                _T = np.eye(self._n_samples) + (sqrt_d_c * self.K_.T).T * sqrt_d_c
+                if self.algorithm == 'exact':
+                    L = cholesky(_T, lower=True, overwrite_a=True)
+                    _T2 = solve_triangular(L, sqrt_d_c)
+                    e_c = sqrt_d_c * solve_triangular(L, _T2, trans='T')
+                elif self.algorithm == 'cg':
+                    _t, _ = cg(_T, sqrt_d_c, tol=self.cg_tol, maxiter=self.cg_max_iter)
+                    e_c = sqrt_d_c * _t
+                self._e.append(e_c)
+                # compute z_c
+                if self.algorithm == 'exact':
+                    z_c = sum(np.log(L.diagonal()))
+                    z.append(z_c)
+            # compute b
             b = (D - Pi.dot(Pi.T)).dot(self.f_.T.reshape((C * n,)))
             b = b.reshape((n, C))
             b = b + y - self.pi_
-            c = np.hstack((self._E[c_].dot(self.K_).dot(b[:, c_])[:, np.newaxis] for c_ in xrange(C)))
-            _t = np.sum(c, axis=1)
-            _t2 = solve_triangular(self._M, _t)
-            _t3 = solve_triangular(self._M, _t2, trans='T')
-            _t4 = np.hstack((self._E[c_].dot(_t3)[:, np.newaxis] for c_ in xrange(C)))
+            # compute c
+            c = np.hstack((self._e[c_] * self.K_.dot(b[:, c_]))[:, np.newaxis] for c_ in xrange(C))
+            # compute a
+            # self._M = cholesky(np.diag(sum(self._e)), lower=True, overwrite_a=True)
+            # _t = np.sum(c, axis=1)
+            # _t2 = solve_triangular(self._M, _t)
+            # _t3 = solve_triangular(self._M, _t2, trans='T')
+            _t3 = np.sum(c, axis=1) / np.maximum(sum(self._e), 1e-8 * np.ones_like(self._e[0]))
+            _t4 = np.hstack((self._e[c_] * _t3)[:, np.newaxis] for c_ in xrange(C))
             a = b - c + _t4
+            # compute f
             self.f_ = self.K_.dot(a)
+            # compute approx. LML
             lml = -0.5 * sum(a[:, _c].dot(self.f_[:, _c]) for _c in xrange(C)) # -0.5a^Tf
             lml += sum(y[:, _c].dot(self.f_[:, _c]) for _c in xrange(C)) # y^Tf
             lml -= sum(log_sum_exp(f) for f in self.f_)
@@ -203,10 +244,11 @@ class GPClassifier(BaseEstimator):
         Sigma = []
         k_star_star = self._kernel(x_star, x_star)
         for c_ in xrange(C):
-            b = self._E[c_].dot(k_star)
-            _t = solve_triangular(self._M, b)
-            _t2 = solve_triangular(self._M, _t, trans='T')
-            c = self._E[c_].dot(_t2)
+            b = self._e[c_] * k_star
+            # _t = solve_triangular(self._M, b)
+            # _t2 = solve_triangular(self._M, _t, trans='T')
+            _t2 = b / np.maximum(sum(self._e), 1e-8 * np.ones_like(self._e[0]))
+            c = self._e[c_] * _t2
             sigma_row = [c.dot(k_star)] * C
             sigma_row[c_] += ( k_star_star - b.dot(k_star) )
             Sigma.append(sigma_row)

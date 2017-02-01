@@ -141,7 +141,7 @@ class NNClassifier(BaseEstimator):
             self.layers, self.best_layers_ = self.best_layers_, self.layers
         return y_pred
 
-    def _predict(self, X):
+    def predict(self, X):
         y_pred = self.predict_proba(X)
         return one_hot_decision_function(y_pred)
 
