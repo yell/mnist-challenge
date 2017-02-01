@@ -3,6 +3,7 @@ import os.path
 import numpy as np
 from copy import deepcopy
 
+from utils import one_hot
 from utils.read_write import save_model
 from metrics import get_metric
 
@@ -195,6 +196,8 @@ class BaseEstimator(object):
 
     def evaluate(self, X, y_true, metric='accuracy_score'):
         y_pred = self.predict(X)
+        if len(y_pred.shape) == 2 and y_pred.shape[1] > 1 and (len(y_true.shape) == 1 or y_true.shape[1] == 1):
+            y_true = one_hot(y_true)
         return get_metric(metric)(y_true, y_pred)
 
     def model_name(self):

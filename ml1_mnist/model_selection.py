@@ -466,9 +466,9 @@ class GridSearchCV(object):
                         self.model.fit(X[train], y[train])
                     self.cv_results_['split{0}_train_time'.format(split_index)].append(s.elapsed())
                     with Stopwatch(verbose=False) as s:
-                        y_pred = self.model.predict(X[test])
+                        score = self.model.evaluate(X[test], y[test])
                     self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed())
-                    score = self.scoring(y[test], y_pred)
+                    # score = self.scoring(y[test], y_pred)
                     splits_scores.append(score)
                     # add score to `cv_results_`
                     self.cv_results_['split{0}_score'.format(split_index)].append(score)
@@ -535,9 +535,9 @@ class GridSearchCV(object):
                         .append(s.elapsed() if params_index == 0 else 0.)
                     # evaluate
                     with Stopwatch(verbose=False) as s:
-                        y_pred = self.model.predict(X[test])
+                        score = self.model.evaluate(X[test], y[test])
                     self.cv_results_['split{0}_test_time'.format(split_index)].append(s.elapsed())
-                    score = self.scoring(y[test], y_pred)
+                    # score = self.scoring(y[test], y_pred)
                     # add score to `cv_results_`
                     cv_key = 'split{0}_score'.format(split_index)
                     self.cv_results_[cv_key].append(score)

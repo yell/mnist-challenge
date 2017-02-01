@@ -4,7 +4,7 @@ from scipy.sparse.linalg import cg
 
 import env
 from base import BaseEstimator
-from utils import RNG, one_hot_decision_function
+from utils import RNG, one_hot, one_hot_decision_function
 from kernels import get_kernel
 from nn.activations import softmax
 
@@ -66,7 +66,7 @@ class GPClassifier(BaseEstimator):
         Approx. log marginal likelihood \log{q(y|X, theta)},
         where theta are kernel parameters.
         Note that if `algorithm` is set to 'cg', lml_ is 2 * log|B|
-        bigger than the actual value (since the latter in this case
+        larger than the actual value (since the latter in this case
         is not computed).
 
     Examples
@@ -78,7 +78,7 @@ class GPClassifier(BaseEstimator):
     ...      [0., 1.],
     ...      [1., 0.],
     ...      [1., 1.]]
-    >>> y = one_hot([0, 1, 1, 0])
+    >>> y = np.array([0, 1, 1, 0])
     >>> gp = GPClassifier(random_seed=1337, kernel_params=dict(sigma=1., gamma=1.))
     >>> gp.fit(X, y).K_
     array([[ 1.        ,  0.36787944,  0.36787944,  0.13533528],
@@ -95,9 +95,9 @@ class GPClassifier(BaseEstimator):
            [ 0.,  1.],
            [ 0.,  1.],
            [ 1.,  0.]])
-    >>> accuracy_score(y, y_pred)
+    >>> accuracy_score(one_hot(y), y_pred)
     1.0
-    >>> log_loss(y, pi) #doctest: +ELLIPSIS
+    >>> log_loss(one_hot(y), pi) #doctest: +ELLIPSIS
     0.535...
     >>> gp.lml_ #doctest: +ELLIPSIS
     -3.995...
@@ -110,8 +110,7 @@ class GPClassifier(BaseEstimator):
     array([[ 1.,  0.],
            [ 0.,  1.],
            [ 0.,  1.]])
-    >>> gp.set_params(algorithm='cg').fit(X, y)
-    >>> gp.predict_proba(X_star) # random
+    >>> gp.set_params(algorithm='cg').fit(X, y).predict_proba(X_star) # random
     array([[ 0.55933235,  0.44066765],
            [ 0.49784393,  0.50215607],
            [ 0.49546654,  0.50453346]])
@@ -166,15 +165,17 @@ class GPClassifier(BaseEstimator):
         algorithm (3.3) from GPML with shared covariance matrix
         among all latent functions.
         """
-        if not self._kernel:
-            self._kernel = get_kernel(self.kernel, **self.kernel_params)
+        if len(y.shape) == 1 or y.shape[1] == 1:
+            y = one_hot(y)
+        self._check_X_y(X, y)
+        self._kernel = get_kernel(self.kernel, **self.kernel_params)
         # shortcuts
         C = self._n_outputs
         n = self._n_samples
-        # construct covariance matrix if needed
-        if self.K_ is None:
-            self.K_ = self._kernel(X, X)
-            self.K_ += self.sigma_n**2 * np.eye(n)
+        # construct covariance matrix [if needed]
+        # if self.K_ is None:
+        self.K_ = self._kernel(X, X)
+        self.K_ += self.sigma_n**2 * np.eye(n)
 
         # init latent function values
         self.f_ = np.zeros_like(y)
@@ -231,7 +232,7 @@ class GPClassifier(BaseEstimator):
             lml -= sum(log_sum_exp(f) for f in self.f_)
             lml -= sum(z)
             lmls.append(lml)
-            if len(lmls) >= 2 and np.abs(lmls[-1] - lmls[-2]) < self.tol:
+            if len(lmls) >= 2 and np.abs(lmls[-1] - lmls[-2]) < self.tol * self.K_.max():
                 break
         self.lml_ = lmls[-1]
 
@@ -262,8 +263,7 @@ class GPClassifier(BaseEstimator):
         return np.mean(pi_star, axis=0)
 
     def predict_proba(self, X):
-        if not self._kernel:
-            self._kernel = get_kernel(self.kernel, **self.kernel_params)
+        self._kernel = get_kernel(self.kernel, **self.kernel_params)
         K_star = self._kernel(X, self._X)
         self._rng = RNG(self.random_seed)
         predictions = [self._predict_k_star(k_star, x_star) for k_star, x_star in zip(K_star, X)]
@@ -287,3 +287,57 @@ class GPClassifier(BaseEstimator):
             if attr in params and params[attr] is not None:
                 params[attr] = np.asarray(params[attr])
         return params
+
+
+# if __name__ == '__main__':
+#     # run corresponding tests
+#     from utils.testing import run_tests
+#     run_tests(__file__)
+
+if __name__ == '__main__':
+    from utils.dataset import load_mnist
+    from utils import Stopwatch, one_hot, one_hot_decision_function
+    from utils.read_write import load_model
+    from model_selection import TrainTestSplitter
+    from metrics import accuracy_score
+
+    X, y = load_mnist('train', '../../data/')
+    train, test = TrainTestSplitter(random_seed=1337, shuffle=True).split(y, train_ratio=0.0015, stratify=True)
+    X /= 255.
+
+    gp = GPClassifier(max_iter=100,
+                      tol=1e-6,
+                      random_seed=1337,
+                      sigma_n=0.1,
+                      algorithm='cg',
+                      kernel_params=dict(
+                          gamma=0.08)
+                      )
+    with Stopwatch(verbose=True): # Elapsed time: 0.741 sec
+        gp.fit(X[train], one_hot(y[train]))
+    # print gp.predict_proba(X[test][:5])
+    # print one_hot(y[test][:5])
+    print gp.evaluate(X[test][:25], one_hot(y[test][:25]))
+    print gp.lml_
+
+#     X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
+#     y = one_hot([0, 1, 1, 0])
+#     gp = GPClassifier(
+#         algorithm='cg',
+#         random_seed=1337,
+#         kernel_params=dict(sigma=1., gamma=1.)
+#     )
+#     with Stopwatch(verbose=True): # Elapsed time: 0.002 sec
+#         gp.fit(X, y)
+#     print gp.lml_
+#     print gp.predict_proba([[0.3, 0.5], [0., 0.09], [-3., 4.]])
+#     gp.save('gp.json', json_params=dict(indent=4))
+#     gp_loaded = load_model('gp.json').fit(X, y)
+#     print gp_loaded.predict_proba([[0.3, 0.5], [0., 0.09], [-3., 4.]])
+#     # print gp._e
+#     # print np.maximum(sum(gp._e), 0.52 * np.ones_like(gp._e[0]))
+
+#     # # -3.99583767262
+#     # # [[0.50210975  0.49789025]
+#     # #  [0.55729945  0.44270055]
+#     # #  [0.49546654  0.50453346]]
