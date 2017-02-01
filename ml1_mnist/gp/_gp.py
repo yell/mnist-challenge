@@ -152,8 +152,10 @@ class GPClassifier(BaseEstimator):
 
         self.K_ = None
         self.f_ = None
+        self.pi_ = None
         self.lml_ = None
 
+        self._kernel = None
         self._e = None
         self._M = None
         super(GPClassifier, self).__init__(_y_required=True)
@@ -164,7 +166,8 @@ class GPClassifier(BaseEstimator):
         algorithm (3.3) from GPML with shared covariance matrix
         among all latent functions.
         """
-        self._kernel = get_kernel(self.kernel, **self.kernel_params)
+        if not self._kernel:
+            self._kernel = get_kernel(self.kernel, **self.kernel_params)
         # shortcuts
         C = self._n_outputs
         n = self._n_samples
@@ -172,6 +175,7 @@ class GPClassifier(BaseEstimator):
         if self.K_ is None:
             self.K_ = self._kernel(X, X)
             self.K_ += self.sigma_n**2 * np.eye(n)
+
         # init latent function values
         self.f_ = np.zeros_like(y)
 
@@ -253,13 +257,15 @@ class GPClassifier(BaseEstimator):
             sigma_row[c_] += ( k_star_star - b.dot(k_star) )
             Sigma.append(sigma_row)
         Sigma = np.asarray(Sigma)
-        f_star = self.rng.multivariate_normal(mu, Sigma, size=self.n_samples)
+        f_star = self._rng.multivariate_normal(mu, Sigma, size=self.n_samples)
         pi_star = softmax(f_star)
         return np.mean(pi_star, axis=0)
 
     def predict_proba(self, X):
-        self.rng = RNG(self.random_seed)
+        if not self._kernel:
+            self._kernel = get_kernel(self.kernel, **self.kernel_params)
         K_star = self._kernel(X, self._X)
+        self._rng = RNG(self.random_seed)
         predictions = [self._predict_k_star(k_star, x_star) for k_star, x_star in zip(K_star, X)]
         return np.asarray(predictions)
 
@@ -267,8 +273,17 @@ class GPClassifier(BaseEstimator):
         pi_pred = self.predict_proba(X)
         return one_hot_decision_function(pi_pred)
 
-    def _serialize(self, params):
-        return params
+    def reset_K(self):
+        self.K_ = None
 
+    def _serialize(self, params):
+        for attr in ('K_', 'f_', 'pi_'):
+            if attr in params and params[attr] is not None:
+                params[attr] = params[attr].tolist()
+        return params
+        
     def _deserialize(self, params):
+        for attr in ('K_', 'f_', 'pi_'):
+            if attr in params and params[attr] is not None:
+                params[attr] = np.asarray(params[attr])
         return params
