@@ -7,7 +7,7 @@ def get_kernel(kernel_name, **kernel_params):
     Examples
     --------
     >>> get_kernel('rbf', gamma=2.)
-    1.0 ** 2 * RBF(gamma=2.0)
+    1.0**2 * RBF(gamma=2.0)
     """
     for k, v in globals().items():
         if k.lower() == kernel_name.lower():
@@ -110,14 +110,14 @@ class Poly(BaseKernel):
 class RBF(BaseKernel):
     """RBF kernel:
 
-    k(x, y) = `sigma` ** 2 * exp(-`gamma` * ||x - y|| ** 2),
+    k(x, y) = `sigma`**2 * exp(-`gamma` * ||x - y||**2),
     `gamma`, `sigma` > 0
 
     Examples
     --------
     >>> rbf = 4. * RBF()
     >>> rbf
-    2.0 ** 2 * RBF(gamma=1.0)
+    2.0**2 * RBF(gamma=1.0)
     >>> rbf(0., 1.)
     1.4715177646857693
     >>> rbf([0., 1.], [0.5, 2.])
@@ -134,7 +134,7 @@ class RBF(BaseKernel):
         self.sigma = sigma
 
     def __repr__(self):
-        s = "{0} ** 2 * ".format(self.sigma)
+        s = "{0}**2 * ".format(self.sigma)
         s += super(RBF, self).__repr__()
         s += "(gamma={0})".format(self.gamma)
         return s
@@ -143,7 +143,7 @@ class RBF(BaseKernel):
         return RBF(gamma=self.gamma, sigma=self.sigma * np.sqrt(sigma2))
 
     def _call(self, x, y):
-        return self.sigma ** 2 * np.exp(-self.gamma * dist.cdist(x, y) ** 2)
+        return self.sigma**2 * np.exp(-self.gamma * dist.cdist(x, y)**2)
 
 
 class Sigmoid(BaseKernel):
