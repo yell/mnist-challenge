@@ -1,7 +1,7 @@
 .idea/*
 ml1_mnist/.idea/*
 .ipynb_checkpoints/*
-data/*.npy
+data/*
 report/*.txt
 *.pyc
 *.json
@@ -11,3 +11,5 @@ learning_curves/*
 models/*
 tmp/*
 run_*.py
+report/*.tex
+.report.tex.swp
