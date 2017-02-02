@@ -82,20 +82,20 @@ class GPClassifier(BaseEstimator):
     >>> y = np.array([0, 1, 1, 0])
     >>> gp = GPClassifier(random_seed=1337, kernel_params=dict(sigma=1., gamma=1.))
     >>> gp.fit(X, y).K_
-    array([[ 1.        ,  0.36787944,  0.36787944,  0.13533528],
-           [ 0.36787944,  1.        ,  0.13533528,  0.36787944],
-           [ 0.36787944,  0.13533528,  1.        ,  0.36787944],
-           [ 0.13533528,  0.36787944,  0.36787944,  1.        ]])
+    array([[ 1.        ,  0.36787945,  0.36787945,  0.13533528],
+           [ 0.36787945,  1.        ,  0.13533528,  0.36787945],
+           [ 0.36787945,  0.13533528,  1.        ,  0.36787945],
+           [ 0.13533528,  0.36787945,  0.36787945,  1.        ]], dtype=float32)
     >>> pi = softmax(gp.f_); pi
-    array([[ 0.57933424,  0.42066576],
-           [ 0.42101489,  0.57898511],
-           [ 0.42103579,  0.57896421],
-           [ 0.57868634,  0.42131366]])
+    array([[ 0.57933426,  0.42066577],
+           [ 0.42101488,  0.5789851 ],
+           [ 0.42103583,  0.57896417],
+           [ 0.5786863 ,  0.42131364]], dtype=float32)
     >>> y_pred = one_hot_decision_function(pi); y_pred
     array([[ 1.,  0.],
            [ 0.,  1.],
            [ 0.,  1.],
-           [ 1.,  0.]])
+           [ 1.,  0.]], dtype=float32)
     >>> accuracy_score(one_hot(y), y_pred)
     1.0
     >>> log_loss(one_hot(y), pi) #doctest: +ELLIPSIS
@@ -104,15 +104,15 @@ class GPClassifier(BaseEstimator):
     -3.996...
     >>> X_star = [[0., 0.09], [0.3, 0.5], [-3., 4.]]
     >>> gp.predict_proba(X_star) # random
-    array([[ 0.56200716,  0.43799284],
-           [ 0.49808652,  0.50191348],
+    array([[ 0.56200714,  0.43799286],
+           [ 0.4980865 ,  0.5019135 ],
            [ 0.49546654,  0.50453346]])
     >>> gp.predict(X_star)
     array([[ 1.,  0.],
            [ 0.,  1.],
            [ 0.,  1.]])
     >>> gp.set_params(algorithm='cg').fit(X, y).predict_proba(X_star) # random
-    array([[ 0.56027714,  0.43972286],
+    array([[ 0.56027713,  0.43972287],
            [ 0.49784431,  0.50215569],
            [ 0.49546654,  0.50453346]])
     >>> gp.lml_ #doctest: +ELLIPSIS
@@ -169,6 +169,7 @@ class GPClassifier(BaseEstimator):
         if len(y.shape) == 1 or y.shape[1] == 1:
             y = one_hot(y)
         self._check_X_y(X, y)
+        y = y.astype(np.float32)
         self._kernel = get_kernel(self.kernel, **self.kernel_params)
         # shortcuts
         C = self._n_outputs
@@ -177,6 +178,7 @@ class GPClassifier(BaseEstimator):
         # if self.K_ is None:
         self.K_ = self._kernel(X, X)
         self.K_ += self.sigma_n**2 * np.eye(n)
+        self.K_ = self.K_.astype(np.float32)
 
         # init latent function values
         self.f_ = np.zeros_like(y)
@@ -202,6 +204,7 @@ class GPClassifier(BaseEstimator):
                     e_c = sqrt_d_c * solve_triangular(L, _T2, trans='T')
                 elif self.algorithm == 'cg':
                     _t, _ = cg(_T, sqrt_d_c, tol=self.cg_tol, maxiter=self.cg_max_iter)
+                    _t = _t.astype(np.float32)
                     e_c = sqrt_d_c * _t
                 self._e.append(e_c)
                 # compute z_c
@@ -223,6 +226,7 @@ class GPClassifier(BaseEstimator):
             _t3 = np.sum(c, axis=1) / np.maximum(sum(self._e), 1e-8 * np.ones_like(self._e[0]))
             _t4 = np.hstack((self._e[c_] * _t3)[:, np.newaxis] for c_ in xrange(C))
             a = b - c + _t4
+            a = a.astype(np.float32)
             # compute f
             self.f_ = self.K_.dot(a)
             # compute approx. LML
