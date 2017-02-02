@@ -70,7 +70,7 @@ class BaseOptimizer(object):
                 self.val_loss_history.append(val_loss)
                 val_score = nnet._metric(nnet._y_val, nnet.validate(nnet._X_val))
                 if self.epoch > 1 and val_score < 0.2 * self.val_score_history[-1]:
-                	return
+                    return
                 self.val_score_history.append(val_score)
                 if self.epoch > 1 and val_score > nnet.best_val_score_:
                     nnet.best_val_score_ = val_score

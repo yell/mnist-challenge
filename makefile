@@ -4,6 +4,7 @@ test:
 	rm -rf 'ml1_mnist/knn/knn.json'
 	rm -rf 'ml1_mnist/decomposition/pca.json'
 	rm -rf 'ml1_mnist/gp/gp.json'
+	rm -rf 'ml1_mnist/nn/rbm/rbm.json'
 
 clean:
 	find . -name '*.pyc' -type f -delete
