@@ -13,3 +13,4 @@ tmp/*
 run_*.py
 report/*.tex
 .report.tex.swp
+cv_results/.~lock.gp_raw_best.xlsx#
