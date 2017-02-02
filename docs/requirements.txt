@@ -1,7 +1,0 @@
-numpy
-scipy
-matplotlib # optional, for visualization
-seaborn # optional, for visualization
-pandas # optional, for CV results manipulation
-pathos # optional, for multiprocessing computing (unlike joblib, this can pickle instance methods too)
-nose # optional, for testing
