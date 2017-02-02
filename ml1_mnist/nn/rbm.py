@@ -3,27 +3,29 @@ from copy import deepcopy
 
 import env
 from base import BaseEstimator
-from utils import RNG
+from utils import RNG, print_inline, width_format, Stopwatch
 from layers import FullyConnected
 from activations import sigmoid
 
 
 class RBM(BaseEstimator):
     def __init__(self, n_hidden=256, persistent=True, k=1,
-                 batch_size=128, n_iter=10, learning_rate=0.1, momentum=0.9, verbose=False,
+                 batch_size=128, n_epochs=10, learning_rate=0.1, momentum=0.9, verbose=False,
                  random_seed=None):
         self.n_hidden = n_hidden
         self.persistent = persistent
         self.k = k # k in CD-k / PCD-k
         self.batch_size = batch_size
-        self.n_iter = n_iter
+        self.n_epochs = n_epochs
         self.learning_rate = learning_rate
         self.momentum = momentum
+        self.verbose = verbose
         self.random_seed = random_seed
 
         self.W = None
         self.vb = None  # visible units bias
         self.hb = None # hidden units bias
+        self.epoch = 0
 
         self.best_W = None
         self.best_vb = None
@@ -120,8 +122,11 @@ class RBM(BaseEstimator):
 
     def train_epoch(self, X):
         mean_recons = []
-        for X_batch in self.batch_iter(X):
+        for i, X_batch in enumerate(self.batch_iter(X)):
             mean_recons.append(self.update(X_batch))
+            if self.verbose and i % (len(X)/(self.batch_size * 16)) == 0:
+                print_inline('.')
+        if self.verbose: print_inline(' ')
         return np.mean(mean_recons)
 
     def _fit(self, X):
@@ -138,14 +143,23 @@ class RBM(BaseEstimator):
             self._dhb = np.zeros_like(self.hb)
             self._rng = RNG(self.random_seed)
         self._rng.reseed()
-        for i in xrange(self.n_iter):
+        timer = Stopwatch(verbose=False).start()
+        for _ in xrange(self.n_epochs):
+            self.epoch += 1
+            if self.verbose:
+                print_inline('Epoch {0:>{1}}/{2} '.format(self.epoch, len(str(self.n_epochs)), self.n_epochs))
             mean_recon = self.train_epoch(X)
             if mean_recon < self.best_recon:
                 self.best_recon = mean_recon
-                self.best_epoch = i + 1
+                self.best_epoch = self.epoch
                 self.best_W = self.W.copy()
                 self.best_vb = self.vb.copy()
                 self.best_hb = self.hb.copy()
+            msg = 'elapsed: {0} sec'.format(width_format(timer.elapsed(), default_width=5, max_precision=2))
+            msg += ' - recon. mse: {0}'.format(width_format(mean_recon, default_width=6, max_precision=4))
+            msg += ' - best r-mse: {0}'.format(width_format(self.best_recon, default_width=6, max_precision=4))
+            if self.verbose:
+                print msg
 
     def _serialize(self, params):
         for attr in ('W', 'best_W',
@@ -165,13 +179,14 @@ class RBM(BaseEstimator):
 
 
 if __name__ == '__main__':
-    X = RNG(seed=1337).rand(32, 64)
+    X = RNG(seed=1337).rand(32, 256)
     rbm = RBM(n_hidden=100,
               k=4,
-              batch_size=16,
-              n_iter = 10,
+              batch_size=2,
+              n_epochs = 50,
               learning_rate=0.01,
               momentum=0.99,
+              verbose=True,
               random_seed=1337)
     rbm.fit(X)
     # rbm.save('rbm.json', json_params=dict(indent=4))
