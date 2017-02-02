@@ -146,6 +146,41 @@ class RBF(BaseKernel):
         return self.sigma**2 * np.exp(-self.gamma * dist.cdist(x, y)**2)
 
 
+class RationalQuadratic(BaseKernel):
+    """Rational-quadratic kernel
+
+    k(x, y) = `sigma`**2 * (1 + ||x - y||**2 / (2 * `alpha` * `l`**2)) ** (-`alpha`)
+
+    Examples
+    --------
+    >>> rq = RationalQuadratic(l=0.5)
+    >>> rq
+    1.0**2 * RationalQuadratic(alpha=1.0, l=0.5)
+    >>> rq(0., 1.)
+    0.3333333333333333
+    >>> RationalQuadratic(alpha=10000.)(0., 1.) #doctest: +ELLIPSIS
+    0.60653...
+    >>> RBF(gamma=0.5)(0., 1.) #doctest: +ELLIPSIS
+    0.60653...
+    """
+    def __init__(self, alpha=1.0, l=1.0, sigma=1.0, **kwargs):
+        self.alpha = alpha
+        self.l = l
+        self.sigma = sigma
+
+    def __repr__(self):
+        s = "{0}**2 * ".format(self.sigma)
+        s += super(RationalQuadratic, self).__repr__()
+        s += "(alpha={0}, l={1})".format(self.alpha, self.l)
+        return s
+
+    def __rmul__(self, sigma2):
+        return RationalQuadratic(alpha=self.alpha, l=self.l, sigma=self.sigma * np.sqrt(sigma2))
+
+    def _call(self, x, y):
+        return self.sigma**2 * (1. + (dist.cdist(x, y)**2)/(2.*self.alpha*self.l**2))**(-self.alpha)
+
+
 class Sigmoid(BaseKernel):
     """Sigmoid kernel:
 
