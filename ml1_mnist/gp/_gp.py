@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import cholesky, solve_triangular
 from scipy.sparse.linalg import cg
+from scipy.sparse import diags as sparse_diag
 
 import env
 from base import BaseEstimator
@@ -86,10 +87,10 @@ class GPClassifier(BaseEstimator):
            [ 0.36787944,  0.13533528,  1.        ,  0.36787944],
            [ 0.13533528,  0.36787944,  0.36787944,  1.        ]])
     >>> pi = softmax(gp.f_); pi
-    array([[ 0.58587507,  0.41412493],
-           [ 0.41451392,  0.58548608],
-           [ 0.41448831,  0.58551169],
-           [ 0.58519245,  0.41480755]])
+    array([[ 0.57933424,  0.42066576],
+           [ 0.42101489,  0.57898511],
+           [ 0.42103579,  0.57896421],
+           [ 0.57868634,  0.42131366]])
     >>> y_pred = one_hot_decision_function(pi); y_pred
     array([[ 1.,  0.],
            [ 0.,  1.],
@@ -98,24 +99,24 @@ class GPClassifier(BaseEstimator):
     >>> accuracy_score(one_hot(y), y_pred)
     1.0
     >>> log_loss(one_hot(y), pi) #doctest: +ELLIPSIS
-    0.535...
+    0.546...
     >>> gp.lml_ #doctest: +ELLIPSIS
-    -3.995...
+    -3.996...
     >>> X_star = [[0., 0.09], [0.3, 0.5], [-3., 4.]]
     >>> gp.predict_proba(X_star) # random
-    array([[ 0.56107945,  0.43892055],
-           [ 0.49808083,  0.50191917],
+    array([[ 0.56200716,  0.43799284],
+           [ 0.49808652,  0.50191348],
            [ 0.49546654,  0.50453346]])
     >>> gp.predict(X_star)
     array([[ 1.,  0.],
            [ 0.,  1.],
            [ 0.,  1.]])
     >>> gp.set_params(algorithm='cg').fit(X, y).predict_proba(X_star) # random
-    array([[ 0.55933235,  0.44066765],
-           [ 0.49784393,  0.50215607],
+    array([[ 0.56027714,  0.43972286],
+           [ 0.49784431,  0.50215569],
            [ 0.49546654,  0.50453346]])
     >>> gp.lml_ #doctest: +ELLIPSIS
-    -2.441...
+    -2.439...
 
     >>> from utils.dataset import load_mnist
     >>> from model_selection import TrainTestSplitter as TTS
@@ -130,9 +131,9 @@ class GPClassifier(BaseEstimator):
     >>> accuracy_score(y, one_hot_decision_function(pi))
     1.0
     >>> log_loss(y, pi) #doctest: +ELLIPSIS
-    1.645...
+    1.571...
     >>> gp.lml_ #doctest: +ELLIPSIS
-    -200.76...
+    -199.66...
     """
 
     def __init__(self, kernel='rbf', kernel_params={}, sigma_n=0.0,
@@ -189,9 +190,6 @@ class GPClassifier(BaseEstimator):
                 return
 
             self.pi_ = softmax(self.f_)
-            D = np.diag(self.pi_.T.reshape(C * n, ))
-            Pi = np.vstack((np.diag(self.pi_[:, c_]) for c_ in xrange(C)))
-
             z = []
             self._e = []
             for c_ in xrange(C):
@@ -211,8 +209,9 @@ class GPClassifier(BaseEstimator):
                     z_c = sum(np.log(L.diagonal()))
                     z.append(z_c)
             # compute b
-            b = (D - Pi.dot(Pi.T)).dot(self.f_.T.reshape((C * n,)))
-            b = b.reshape((n, C))
+            # b = (D - Pi.dot(Pi.T)).dot(self.f_.T.reshape((C * n,)))
+            # b = b.reshape((n, C))
+            b = (1. - self.pi_) * self.pi_ * self.f_
             b = b + y - self.pi_
             # compute c
             c = np.hstack((self._e[c_] * self.K_.dot(b[:, c_]))[:, np.newaxis] for c_ in xrange(C))
