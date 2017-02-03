@@ -97,6 +97,17 @@ def plot_learning_curves(l, a, vl, va, last_epochs=64, dirpath='.'):
     plt.close(fig)
 
 
+def plot_rbm_filters(W):
+    plt.figure(figsize=(12, 12))
+    for i in xrange(64):
+        filt = W[:, i].reshape((28, 28))
+        plt.subplot(8, 8, i + 1)
+        plt.imshow(filt, cmap=plt.cm.gray_r, interpolation='nearest')
+        plt.xticks(())
+        plt.yticks(())
+    plt.suptitle('first 64 components extracted by RBM', fontsize=18)
+
+
 if __name__ == '__main__':
     from dataset import load_mnist
     X, y = load_mnist(mode='train', path='../../data/')

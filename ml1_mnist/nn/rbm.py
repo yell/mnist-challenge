@@ -10,15 +10,19 @@ from activations import sigmoid
 
 class RBM(BaseEstimator):
     def __init__(self, n_hidden=256, persistent=True, k=1,
-                 batch_size=128, n_epochs=10, learning_rate=0.1, momentum=0.9, verbose=False,
-                 random_seed=None):
+                 batch_size=128, n_epochs=10, learning_rate=0.1, momentum=0.9,
+                 early_stopping=None, verbose=False, random_seed=None):
         self.n_hidden = n_hidden
         self.persistent = persistent
         self.k = k # k in CD-k / PCD-k
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.learning_rate = learning_rate
+        self._learning_rate = None
         self.momentum = momentum
+        self._momentum = None
+        self.early_stopping = early_stopping
+        self._early_stopping = self.early_stopping
         self.verbose = verbose
         self.random_seed = random_seed
 
@@ -94,15 +98,15 @@ class RBM(BaseEstimator):
             nh_means, nh_samples = self.gibbs_hvh(chain_start if step == 0 else nh_samples)
 
         # update weights
-        self._dW  = self.momentum * self._dW + \
+        self._dW  = self._momentum * self._dW + \
                     np.dot(X_batch.T, ph_mean) - np.dot(nv_samples.T, nh_means)
-        self._dvb = self.momentum * self._dvb +\
+        self._dvb = self._momentum * self._dvb +\
                     np.mean(X_batch - nv_samples, axis=0)
-        self._dhb = self.momentum * self._dhb +\
+        self._dhb = self._momentum * self._dhb +\
                     np.mean(ph_mean - nh_means, axis=0)
-        self.W  += self.learning_rate * self._dW
-        self.vb += self.learning_rate * self._dvb
-        self.hb += self.learning_rate * self._dhb
+        self.W  += self._learning_rate * self._dW
+        self.vb += self._learning_rate * self._dvb
+        self.hb += self._learning_rate * self._dhb
 
         # remember state if needed
         if self.persistent:
@@ -148,6 +152,21 @@ class RBM(BaseEstimator):
             self.epoch += 1
             if self.verbose:
                 print_inline('Epoch {0:>{1}}/{2} '.format(self.epoch, len(str(self.n_epochs)), self.n_epochs))
+            
+            if isinstance(self.learning_rate, str):
+                S, F = map(float, self.learning_rate.split('->'))
+                self._learning_rate = S + (F - S) * (1. - np.exp(-(self.epoch - 1.)/8.)) / (
+                1. - np.exp(-(self.n_epochs - 1.)/8.))
+            else:
+                self._learning_rate = self.learning_rate
+
+            if isinstance(self.momentum, str):
+                S, F = map(float, self.momentum.split('->'))
+                self._momentum = S + (F - S) * (1. - np.exp(-(self.epoch - 1)/4.)) / (
+                1. - np.exp(-(self.n_epochs - 1)/4.))
+            else:
+                self._momentum = self.momentum
+
             mean_recon = self.train_epoch(X)
             if mean_recon < self.best_recon:
                 self.best_recon = mean_recon
@@ -155,11 +174,18 @@ class RBM(BaseEstimator):
                 self.best_W = self.W.copy()
                 self.best_vb = self.vb.copy()
                 self.best_hb = self.hb.copy()
+                self._early_stopping = self.early_stopping
             msg = 'elapsed: {0} sec'.format(width_format(timer.elapsed(), default_width=5, max_precision=2))
             msg += ' - recon. mse: {0}'.format(width_format(mean_recon, default_width=6, max_precision=4))
             msg += ' - best r-mse: {0}'.format(width_format(self.best_recon, default_width=6, max_precision=4))
+            if self.early_stopping:
+                msg += ' {0}*'.format(self._early_stopping)
             if self.verbose:
                 print msg
+            if self._early_stopping == 0:
+                return
+            if self.early_stopping:
+                self._early_stopping -= 1
 
     def _serialize(self, params):
         for attr in ('W', 'best_W',
@@ -183,10 +209,11 @@ if __name__ == '__main__':
     rbm = RBM(n_hidden=100,
               k=4,
               batch_size=2,
-              n_epochs = 50,
-              learning_rate=0.01,
-              momentum=0.99,
+              n_epochs=50,
+              learning_rate='0.05->0.005',
+              momentum='0.5->0.9',
               verbose=True,
+              early_stopping=5,
               random_seed=1337)
     rbm.fit(X)
     # rbm.save('rbm.json', json_params=dict(indent=4))
