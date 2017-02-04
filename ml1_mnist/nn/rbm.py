@@ -10,7 +10,7 @@ from activations import sigmoid
 
 class RBM(BaseEstimator):
     def __init__(self, n_hidden=256, persistent=True, k=1,
-                 batch_size=128, n_epochs=10, learning_rate=0.1, momentum=0.9,
+                 batch_size=10, n_epochs=10, learning_rate=0.1, momentum=0.9,
                  early_stopping=None, verbose=False, random_seed=None):
         self.n_hidden = n_hidden
         self.persistent = persistent

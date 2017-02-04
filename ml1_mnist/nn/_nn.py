@@ -95,7 +95,7 @@ class NNClassifier(BaseEstimator):
             self._setup_layers(X.shape)
         self._X_val = X_val
         self._y_val = y_val
-        if 'verbose' in self.optimizer_params and self.optimizer_params['verbose']:
+        if 'verbose' in self.optimizer_params and self.optimizer_params['verbose'] and X_val is not None:
             print "Train on {0} samples, validate on {1} samples\n".format(len(X), len(X_val))
         self.is_training = True
         self._optimizer.optimize(self)
