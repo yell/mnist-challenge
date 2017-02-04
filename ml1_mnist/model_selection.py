@@ -335,7 +335,7 @@ class GridSearchCV(object):
     split1_train_time : [...]
     std_score : [ 0.125  0.     0.125  0.     0.     0.125]
     """
-    def __init__(self, model, param_grid, param_order=None, train_test_splitter_params={},
+    def __init__(self, model=None, param_grid={}, param_order=None, train_test_splitter_params={},
                  n_splits=3, scoring=accuracy_score, refit=True, save_models=False, dirpath='.', save_params={},
                  verbose=True):
 
