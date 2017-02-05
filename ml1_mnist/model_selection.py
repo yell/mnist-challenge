@@ -1,5 +1,4 @@
 import os.path
-import pandas as pd
 import numpy as np
 import numpy.ma as ma
 from itertools import product
@@ -590,6 +589,7 @@ class GridSearchCV(object):
         return self
 
     def to_df(self):
+        import pandas as pd
         return pd.DataFrame.from_dict(self.cv_results_).fillna('')
 
 

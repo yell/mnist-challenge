@@ -3,7 +3,7 @@
 import numpy as np
 
 from ml1_mnist.gp import GPClassifier
-from ml1_mnist.nn import NNClassifier, RBM
+from ml1_mnist.nn import NNClassifier
 from ml1_mnist.nn.layers import FullyConnected, Activation, Dropout
 from ml1_mnist.nn.activations import leaky_relu
 from ml1_mnist.knn import KNNClassifier
@@ -124,8 +124,10 @@ def _train_nn(X, y):
 	print "Training NN ..."
 	nn.fit(X_train, y_train, X_val=X_val, y_val=y_val)
 
+	print "Saving NN to file ..."
+	nn.save('models/nn.json')
+
 	print "Left '_train_nn'"
-	# nn.save('models/nn.json')
 	return nn
 
 
@@ -414,7 +416,8 @@ def gp(load_nn=True):
 
 if __name__ == '__main__':
 	# Uncomment what to run:
-	# ----------------------
+	# To load NN from file, first run nn(load_nn=False)
+	# -------------------------------------------------
 	# knn(load_nn=True)
 	# knn_without_nn()
 	# nn(load_nn=False)

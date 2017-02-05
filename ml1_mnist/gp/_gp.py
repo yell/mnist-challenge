@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.linalg import cholesky, solve_triangular
 from scipy.sparse.linalg import cg
-from scipy.sparse import diags as sparse_diag
 
 import env
 from base import BaseEstimator

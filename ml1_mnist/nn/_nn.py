@@ -6,8 +6,7 @@ from base import BaseEstimator
 from layers import FullyConnected, Activation, Dropout
 from metrics import get_metric
 from optimizers import get_optimizer
-from activations import get_activation
-from utils import RNG, one_hot_decision_function
+from utils import one_hot_decision_function
 from model_selection import TrainTestSplitter
 
 
