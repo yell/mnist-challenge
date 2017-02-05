@@ -105,7 +105,7 @@ def plot_rbm_filters(W):
         plt.imshow(filt, cmap=plt.cm.gray_r, interpolation='nearest')
         plt.xticks(())
         plt.yticks(())
-    plt.suptitle('first 64 components extracted by RBM', fontsize=18)
+    plt.suptitle('First 64 components extracted by RBM', fontsize=24)
 
 
 if __name__ == '__main__':

@@ -32,7 +32,7 @@ def log_sum_exp(x):
 
 class GPClassifier(BaseEstimator):
     """
-    Gaussian processes classificator (GPC).
+    Gaussian processes classifier (GPC).
 
     Parameters
     ----------
