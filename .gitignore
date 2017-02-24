@@ -11,7 +11,7 @@ report/*.txt
 ml1_mnist/nn/learning_curves/*
 learning_curves/*
 *.png
-models/*
+models/*.json
 tmp/*
 run_*.py
 report/*.tex
