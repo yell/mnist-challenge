@@ -5,6 +5,7 @@ data/*
 report/*.txt
 *.pyc
 *.json
+*.zip
 ml1_mnist/nn/learning_curves/*
 learning_curves/*
 *.png
@@ -14,3 +15,4 @@ run_*.py
 report/*.tex
 .report.tex.swp
 cv_results/.~lock.gp_raw_best.xlsx#
+upload/*

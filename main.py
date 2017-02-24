@@ -1,4 +1,4 @@
-# LOOK AT THE VERY BOTTOM OF THIS FILE
+# Look at the very bottom of this file
 
 import numpy as np
 
@@ -19,6 +19,7 @@ from ml1_mnist.metrics import accuracy_score
 from ml1_mnist.augmentation import RandomAugmentator
 from ml1_mnist.model_selection import TrainTestSplitter
 
+from ml1_mnist.preprocessing import StandardScaler
 
 
 def _train_nn(X, y):
@@ -362,6 +363,7 @@ def gp(load_nn=True):
 	Evaluating GP ... Elapsed time: 22.021 sec
 
 	Test accuracy 0.9839 (error 1.61%)
+	[!] 1.59% if mean is subtracted (lines 394, 395)
 	"""
 	print "Running 'gp'"
 	print "Loading data ..."
@@ -388,6 +390,9 @@ def gp(load_nn=True):
 		X_train = leaky_relu(nn.layers[13]._last_input)
 		nn.forward_pass(X_test)
 		X_test = leaky_relu(nn.layers[13]._last_input)	
+
+	X_train = StandardScaler(with_std=False).fit_transform(X_train)
+	X_test = StandardScaler(with_std=False).fit_transform(X_test)
 
 	gp = GPClassifier(algorithm='cg', 
                       kernel='rbf',
@@ -416,7 +421,6 @@ def gp(load_nn=True):
 
 if __name__ == '__main__':
 	# Uncomment what to run:
-	# To load NN from file, first run nn(load_nn=False)
 	# -------------------------------------------------
 	# knn(load_nn=True)
 	# knn_without_nn()
