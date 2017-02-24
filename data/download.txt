@@ -1,0 +1,2 @@
+Download files from http://yann.lecun.com/exdb/mnist/ 
+and unzip here.

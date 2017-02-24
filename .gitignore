@@ -1,7 +1,9 @@
 .idea/*
 ml1_mnist/.idea/*
 .ipynb_checkpoints/*
-data/*
+data/*.npy
+data/*.idx1-ubyte
+data/*.idx3-ubyte
 report/*.txt
 *.pyc
 *.json
