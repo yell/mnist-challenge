@@ -5,8 +5,8 @@ ml1_mnist/.idea/*
 *.json
 *.zip
 ./*.png
-data/*.idx1-ubyte
-data/*.idx3-ubyte
+data/*idx1-ubyte
+data/*idx3-ubyte
 data/*.npy
 learning_curves/*
 ml1_mnist/nn/learning_curves/*
