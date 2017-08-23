@@ -16,13 +16,13 @@ without ensemble learning.
 Also check for some plots (confusion matrices, learning curves etc.).
 
 ## How to install
-```
+```bash
 git clone https://github.com/monsta-hd/ml-mnist
 cd ml-mnist/
 sudo pip install -r requirements.txt
 ```
 Optionally, one can also run tests:
-```
+```bash
 make test
 ```
 
