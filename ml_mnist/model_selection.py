@@ -203,7 +203,7 @@ class GridSearchCV(object):
     Parameters
     ----------
     model : model object
-        This is assumed to implement the ml1_mnist.BaseEstimator interface.
+        This is assumed to implement the ml_mnist.BaseEstimator interface.
     param_grid : dict[str] = iterable, or iterable of such
         Dictionary with parameters possible values or an iterable (e.g. list)
         of such dictionaries, in which case the grids spanned by each dictionary

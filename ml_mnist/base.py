@@ -34,8 +34,8 @@ def import_trace(module_path, main_package_name,
     - c
     Then `import_trace` ('.../a/b/d.py', 'a') will return 'a.b.d'.
 
-    >>> import_trace(__file__, 'ml1_mnist')
-    'ml1_mnist.base'
+    >>> import_trace(__file__, 'ml_mnist')
+    'ml_mnist.base'
 
     Raises
     ------
@@ -243,7 +243,7 @@ class BaseEstimator(object):
         module_path = os.path.abspath(module_name.replace('.', '/'))
         trace = import_trace(
             module_path=module_path,
-            main_package_name='ml1_mnist',
+            main_package_name='ml_mnist',
             include_main_package=False
         )
         class_name = self.__class__.__name__

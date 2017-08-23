@@ -2,24 +2,24 @@
 
 import numpy as np
 
-from ml1_mnist.gp import GPClassifier
-from ml1_mnist.nn import NNClassifier
-from ml1_mnist.nn.layers import FullyConnected, Activation, Dropout
-from ml1_mnist.nn.activations import leaky_relu
-from ml1_mnist.knn import KNNClassifier
-from ml1_mnist.logreg import LogisticRegression
-from ml1_mnist.decomposition import PCA
+from ml_mnist.gp import GPClassifier
+from ml_mnist.nn import NNClassifier
+from ml_mnist.nn.layers import FullyConnected, Activation, Dropout
+from ml_mnist.nn.activations import leaky_relu
+from ml_mnist.knn import KNNClassifier
+from ml_mnist.logreg import LogisticRegression
+from ml_mnist.decomposition import PCA
 
-from ml1_mnist.utils import (Stopwatch, 
+from ml_mnist.utils import (Stopwatch,
 	                         print_inline,
 	                         one_hot)
-from ml1_mnist.utils.dataset import load_mnist
-from ml1_mnist.utils.read_write import load_model
-from ml1_mnist.metrics import accuracy_score
-from ml1_mnist.augmentation import RandomAugmentator
-from ml1_mnist.model_selection import TrainTestSplitter
+from ml_mnist.utils.dataset import load_mnist
+from ml_mnist.utils.read_write import load_model
+from ml_mnist.metrics import accuracy_score
+from ml_mnist.augmentation import RandomAugmentator
+from ml_mnist.model_selection import TrainTestSplitter
 
-from ml1_mnist.preprocessing import StandardScaler
+from ml_mnist.preprocessing import StandardScaler
 
 
 def _train_nn(X, y):

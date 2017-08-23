@@ -1,5 +1,5 @@
 .idea/*
-ml1_mnist/.idea/*
+ml_mnist/.idea/*
 .ipynb_checkpoints/*
 *.pyc
 *.json
@@ -9,7 +9,7 @@ data/*idx1-ubyte
 data/*idx3-ubyte
 data/*.npy
 learning_curves/*
-ml1_mnist/nn/learning_curves/*
+ml_mnist/nn/learning_curves/*
 models/*.json
 report/*.tex
 report/*.txt
