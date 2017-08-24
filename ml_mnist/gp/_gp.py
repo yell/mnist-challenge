@@ -134,7 +134,6 @@ class GPClassifier(BaseEstimator):
     >>> gp.lml_ #doctest: +ELLIPSIS
     -199.66...
     """
-
     def __init__(self, kernel='rbf', kernel_params={}, sigma_n=0.0,
                  max_iter=100, tol=1e-5, algorithm='exact', cg_tol=1e-5, cg_max_iter=None,
                  n_samples=1000, random_seed=None):
@@ -291,55 +290,7 @@ class GPClassifier(BaseEstimator):
         return params
 
 
-# if __name__ == '__main__':
-#     # run corresponding tests
-#     from utils.testing import run_tests
-#     run_tests(__file__)
-
 if __name__ == '__main__':
-    from utils.dataset import load_mnist
-    from utils import Stopwatch, one_hot, one_hot_decision_function
-    from utils.read_write import load_model
-    from model_selection import TrainTestSplitter
-    from metrics import accuracy_score
-
-    X, y = load_mnist('train', '../../data/')
-    train, test = TrainTestSplitter(random_seed=1337, shuffle=True).split(y, train_ratio=0.0015, stratify=True)
-    X /= 255.
-
-    gp = GPClassifier(max_iter=100,
-                      tol=1e-6,
-                      random_seed=1337,
-                      sigma_n=0.1,
-                      algorithm='cg',
-                      kernel_params=dict(
-                          gamma=0.08)
-                      )
-    with Stopwatch(verbose=True): # Elapsed time: 0.741 sec
-        gp.fit(X[train], one_hot(y[train]))
-    # print gp.predict_proba(X[test][:5])
-    # print one_hot(y[test][:5])
-    print gp.evaluate(X[test][:25], one_hot(y[test][:25]))
-    print gp.lml_
-
-#     X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
-#     y = one_hot([0, 1, 1, 0])
-#     gp = GPClassifier(
-#         algorithm='cg',
-#         random_seed=1337,
-#         kernel_params=dict(sigma=1., gamma=1.)
-#     )
-#     with Stopwatch(verbose=True): # Elapsed time: 0.002 sec
-#         gp.fit(X, y)
-#     print gp.lml_
-#     print gp.predict_proba([[0.3, 0.5], [0., 0.09], [-3., 4.]])
-#     gp.save('gp.json', json_params=dict(indent=4))
-#     gp_loaded = load_model('gp.json').fit(X, y)
-#     print gp_loaded.predict_proba([[0.3, 0.5], [0., 0.09], [-3., 4.]])
-#     # print gp._e
-#     # print np.maximum(sum(gp._e), 0.52 * np.ones_like(gp._e[0]))
-
-#     # # -3.99583767262
-#     # # [[0.50210975  0.49789025]
-#     # #  [0.55729945  0.44270055]
-#     # #  [0.49546654  0.50453346]]
+    # run corresponding tests
+    from utils.testing import run_tests
+    run_tests(__file__)

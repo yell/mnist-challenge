@@ -17,7 +17,6 @@ def is_attribute_name(name):
 def is_param_or_attribute_name(name):
     return not name.startswith('_')
 
-
 def import_trace(module_path, main_package_name,
                  include_main_package=True, discard_underscore_packages=True):
 
@@ -58,7 +57,6 @@ def import_trace(module_path, main_package_name,
             return trace
         trace = '.'.join(filter(bool, [tail, trace]))
     return trace
-
 
 def pformat(params, offset, printer=repr):
     """Pretty format the dictionary `params`.
@@ -302,3 +300,10 @@ class BaseEstimator(object):
         del params['model']
         return "{0}({1})".format(class_name,
                                  pformat(params, offset=len(class_name)))
+
+
+if __name__ == '__main__':
+    # run corresponding tests
+    import env
+    from utils.testing import run_tests
+    run_tests(__file__)

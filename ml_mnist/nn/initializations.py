@@ -1,5 +1,6 @@
 import numpy as np
 
+import env
 from utils import RNG
 
 
@@ -24,12 +25,10 @@ def _glorot_fan(shape):
     fan_out = receptive_field_size * shape[0]
     return fan_in, fan_out
 
-
 def glorot_uniform(shape, random_seed=None):
     fan_in, fan_out = _glorot_fan(shape)
     s = np.sqrt(6. / (fan_in + fan_out))
     return RNG(random_seed).uniform(low=-s, high=s, size=shape)
-
 
 def glorot_normal(shape, random_seed=None):
     fan_in, fan_out = _glorot_fan(shape)

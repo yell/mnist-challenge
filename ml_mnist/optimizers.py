@@ -93,7 +93,6 @@ class BaseOptimizer(object):
                                      self.val_score_history,
                                      dirpath=self.plot_dirpath)
 
-
 class Adam(BaseOptimizer):
     def __init__(self, learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, **params):
         self.learning_rate = learning_rate

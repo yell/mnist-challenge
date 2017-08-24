@@ -30,7 +30,6 @@ def plot_greyscale_image(x, shape=(28, 28), title=None):
         if title:
             plt.title(title, fontsize=18)
 
-
 def plot_learning_curves(l, a, vl, va, last_epochs=64, dirpath='.'):
     n_batches = len(l[0])
     n_epochs = len(l)
@@ -95,7 +94,6 @@ def plot_learning_curves(l, a, vl, va, last_epochs=64, dirpath='.'):
     fname = os.path.join(dirpath, fname)
     fig.savefig(fname, dpi=fig.dpi)
     plt.close(fig)
-
 
 def plot_rbm_filters(W):
     plt.figure(figsize=(12, 12))

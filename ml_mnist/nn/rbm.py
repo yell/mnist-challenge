@@ -1,5 +1,4 @@
 import numpy as np
-from copy import deepcopy
 
 import env
 from base import BaseEstimator
@@ -9,6 +8,25 @@ from activations import sigmoid
 
 
 class RBM(BaseEstimator):
+    """
+    Examples
+    --------
+    >>> X = RNG(seed=1337).rand(32, 256)
+    >>> rbm = RBM(n_hidden=100,
+    ...           k=4,
+    ...           batch_size=2,
+    ...           n_epochs=50,
+    ...           learning_rate='0.05->0.005',
+    ...           momentum='0.5->0.9',
+    ...           verbose=True,
+    ...           early_stopping=5,
+    ...           random_seed=1337)
+    >>> rbm
+    RBM(W=None, batch_size=2, best_W=None, best_epoch=None, best_hb=None,
+      best_recon=inf, best_vb=None, early_stopping=5, epoch=0, hb=None, k=4,
+      learning_rate='0.05->0.005', momentum='0.5->0.9', n_epochs=50,
+      n_hidden=100, persistent=True, random_seed=1337, vb=None, verbose=True)
+    """
     def __init__(self, n_hidden=256, persistent=True, k=1,
                  batch_size=10, n_epochs=10, learning_rate=0.1, momentum=0.9,
                  early_stopping=None, verbose=False, random_seed=None):
@@ -205,18 +223,6 @@ class RBM(BaseEstimator):
 
 
 if __name__ == '__main__':
-    X = RNG(seed=1337).rand(32, 256)
-    rbm = RBM(n_hidden=100,
-              k=4,
-              batch_size=2,
-              n_epochs=50,
-              learning_rate='0.05->0.005',
-              momentum='0.5->0.9',
-              verbose=True,
-              early_stopping=5,
-              random_seed=1337)
-    rbm.fit(X)
-    # rbm.save('rbm.json', json_params=dict(indent=4))
-    # from utils.read_write import load_model
-    # rbm_loaded = load_model('rbm.json')
-    # print rbm_loaded.best_W.shape
+    # run corresponding tests
+    from utils.testing import run_tests
+    run_tests(__file__)

@@ -6,7 +6,7 @@ import env
 from utils import RNG
 
 
-# TODO: load_layer function
+# TODO: implement `get_layer` function
 
 class BaseLayer(object):
     def __init__(self, random_seed=None, **params):
@@ -101,6 +101,7 @@ class FullyConnected(BaseLayer):
             db=self.db.tolist(),
         )
 
+
 class Activation(BaseLayer):
     def __init__(self, activation, **params):
         self.activation_name = activation
@@ -153,6 +154,12 @@ class Dropout(BaseLayer):
             p=self.p,
         )
 
-
 # aliases
 Dense = FullyConnected
+
+
+if __name__ == '__main__':
+    # run corresponding tests
+    import env
+    from utils.testing import run_tests
+    run_tests(__file__)

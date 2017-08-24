@@ -53,18 +53,15 @@ class Stopwatch(object):
             return self.elapsed_
         return self.timerfunc() - self.start_
 
-
 def print_inline(s):
     sys.stdout.write(s)
     sys.stdout.flush()
-
 
 def width_format(x, default_width=8, max_precision=3):
     len_int_x = len(str(int(x)))
     width = max(len_int_x, default_width)
     precision = min(max_precision, max(0, default_width - 1 - len_int_x))
     return "{0:{1}.{2}f}".format(x, width, precision)
-
 
 def one_hot(y):
     """Convert `y` to one-hot encoding.
@@ -100,7 +97,6 @@ def one_hot_decision_function(y):
     z = np.zeros_like(y)
     z[np.arange(len(z)), np.argmax(y, axis=1)] = 1
     return z
-
 
 def unhot(y):
     """

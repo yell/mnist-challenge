@@ -1,4 +1,3 @@
-# TODO: add validation routine (numpyify if needed + check equal lengths)
 import numpy as np
 try:
     import seaborn as sns
@@ -7,6 +6,8 @@ try:
 except ImportError:
     pass
 
+
+# TODO: add validation routine (numpyify if needed + check equal lengths)
 
 def get_metric(metric_name):
     """
@@ -50,7 +51,6 @@ def accuracy_score(y_actual, y_predicted, normalize=True):
         score /= float(len(y_actual))
     return score
 
-
 def zero_one_loss(y_actual, y_predicted, normalize=True):
     """Zero-one classification loss.
 
@@ -79,7 +79,6 @@ def zero_one_loss(y_actual, y_predicted, normalize=True):
     if normalize:
         loss /= float(len(y_actual))
     return loss
-
 
 def log_loss(y_actual, y_predicted, eps=1e-15, normalize=True):
     """Log loss, aka logistic loss or cross-entropy loss.
@@ -110,7 +109,6 @@ def log_loss(y_actual, y_predicted, eps=1e-15, normalize=True):
     if normalize:
         loss /= float(len(y_actual))
     return loss
-
 
 def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
     """Compute confusion matrix.
@@ -199,7 +197,6 @@ def confusion_matrix(y_actual, y_predicted, labels=None, normalize=None):
 
     return C
 
-
 def plot_confusion_matrix(C, labels=None, labels_fontsize=None, **heatmap_params):
     fig = plt.figure()
 
@@ -241,4 +238,5 @@ if __name__ == '__main__':
     # run corresponding tests
     import tests.test_metrics as t
     from utils.testing import run_tests
+    run_tests(__file__)
     run_tests(__file__, t)

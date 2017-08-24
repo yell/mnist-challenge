@@ -13,13 +13,11 @@ from utils import RNG, plot_greyscale_image
 from utils.dataset import load_mnist
 
 
-
 def get_transformation(transformation_name, **params):
     for k, v in globals().items():
         if k.lower() == transformation_name.lower():
             return v(**params)
     raise ValueError("invalid transformation name '{0}'".format(transformation_name))
-
 
 
 class RandomTransformation(object):
@@ -40,7 +38,6 @@ def shift(x, shift_=(0, 0)):
     y = (y - y.min()) * (x.max() - x.min()) / (y.max() - y.min()) + x.min()
     return y
 
-
 class RandomShift(RandomTransformation):
     def __init__(self, x_shift=(0, 0), y_shift=(0, 0), random_seed=None):
         self.x_shift = x_shift
@@ -58,7 +55,6 @@ def rotate(x, angle=0.):
     y = (y - y.min()) * (x.max() - x.min()) / (y.max() - y.min()) + x.min()
     return y
 
-
 class RandomRotate(RandomTransformation):
     def __init__(self, angle=(0., 0.), random_seed=None):
         self.angle = angle
@@ -73,7 +69,6 @@ def subsample(x, pos=(0, 0), new_shape=None):
     new_shape = new_shape or x.shape
     y = x[pos[0]:(pos[0] + new_shape[0]), pos[1]:(pos[1] + new_shape[1])]
     return np.copy(y)
-
 
 class RandomSubsample(RandomTransformation):
     def __init__(self, new_shape=None, random_seed=None):
@@ -91,7 +86,6 @@ def gaussian(x, sigma=0.):
     y = scipy.ndimage.filters.gaussian_filter(x, sigma=sigma, mode='nearest')
     y = (y - y.min()) * (x.max() - x.min()) / (y.max() - y.min()) + x.min()
     return y
-
 
 class RandomGaussian(RandomTransformation):
     def __init__(self, sigma=(0., 0.), random_seed=None):
@@ -113,7 +107,6 @@ class Dropout(RandomTransformation):
         mask = self.rng.uniform(size=x.shape) > p
         mask = mask * (x.max() - x.min()) + x.min()
         return np.minimum(x, mask)
-
 
 
 class RandomAugmentator(RandomTransformation):
@@ -156,17 +149,6 @@ class RandomAugmentator(RandomTransformation):
 
 if __name__ == '__main__':
     X, y = load_mnist(mode='train', path='../data/')
-
-    # x = X[0]/255.
-    # y = shift(x, (-3, 3))
-    # y = RandomShift(x_shift=(-5, 5), y_shift=(-5, 5), random_seed=1337)(x)
-    # y = rotate(x, 30.)
-    # y = RandomRotate((-30, 30), random_seed=1337)(x)
-    # y = gaussian(x, 1.5) # 0 < 1.5
-    # y = RandomGaussian((1., 2.), random_seed=1337)(x)
-    # y = subsample(x, (5, 5), (16, 16))
-    # y = RandomSubsample((20, 20), random_seed=1337)(x)
-    # y = Dropout((0.9, 1.0), random_seed=np.array([23, 31, 98]))(x)
 
     aug = RandomAugmentator(transform_shape=(28, 28), random_seed=1337)
     aug.add('RandomRotate', angle=(-10., 15.))

@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 from nose.tools import assert_raises
 
-from ml_mnist.metrics import get_metric, accuracy_score, zero_one_loss
+from ml_mnist.metrics import get_metric
 
 
 class TestAccuracyScore(object):

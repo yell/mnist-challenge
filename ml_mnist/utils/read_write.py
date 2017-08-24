@@ -9,7 +9,6 @@ def save_model(model, filepath=None, params_mask={}, json_params={}):
     with open(filepath, 'w') as f:
         json.dump(params, f, **json_params)
 
-
 def load_model(filepath=None):
     filepath = filepath or 'model.json'
     with open(filepath) as f:

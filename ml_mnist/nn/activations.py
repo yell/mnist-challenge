@@ -19,20 +19,17 @@ def linear(z, derivative=False):
         return np.ones_like(z)
     return z
 
-
 def sigmoid(z, derivative=False):
     y = 1. / (1. + np.exp(-z))
     if derivative:
         return y * (1. - y)
     return y
 
-
 def tanh(z, derivative=False):
     y = np.tanh(z)
     if derivative:
         return 1. - y ** 2
     return y
-
 
 def relu(z, derivative=False):
     """
@@ -54,7 +51,6 @@ def relu(z, derivative=False):
         return d
     return np.maximum(0., z)
 
-
 def leaky_relu(z, a=0.01, derivative=False):
     """
     >>> leaky_relu( 1.)
@@ -69,14 +65,12 @@ def leaky_relu(z, a=0.01, derivative=False):
         return d
     return np.maximum(a * z, z)
 
-
 def softplus(z, derivative=False):
     # TODO: prevent overflow
     """Smooth ReLU."""
     if derivative:
         return sigmoid(z)
     return np.log(1. + np.exp(z))
-
 
 def softmax(z, derivative=False):
     """
@@ -92,9 +86,16 @@ def softmax(z, derivative=False):
     array([[ 0.109375,  0.1875  ,  0.234375]])
     """
     z = np.atleast_2d(z)
-    # avoid numerical overflow by removing max
+    # avoid numerical overflow by subtracting max
     e = np.exp(z - np.amax(z, axis=1, keepdims=True))
     y = e / np.sum(e, axis=1, keepdims=True)
     if derivative:
-        return y * (1. - y) # element-wisely
+        return y * (1. - y) # element-wise
     return y
+
+
+if __name__ == '__main__':
+    # run corresponding tests
+    import env
+    from utils.testing import run_tests
+    run_tests(__file__)

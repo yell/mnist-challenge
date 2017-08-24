@@ -71,7 +71,6 @@ class Linear(BaseKernel):
     def _call(self, x, y):
         return np.dot(x, y.T)
 
-
 class Poly(BaseKernel):
     """Polynomial kernel:
 
@@ -105,7 +104,6 @@ class Poly(BaseKernel):
 
     def _call(self, x, y):
         return (self.gamma * np.dot(x, y.T) + self.offset) ** self.degree
-
 
 class RBF(BaseKernel):
     """RBF kernel:
@@ -145,7 +143,6 @@ class RBF(BaseKernel):
     def _call(self, x, y):
         return self.sigma**2 * np.exp(-self.gamma * dist.cdist(x, y)**2)
 
-
 class RationalQuadratic(BaseKernel):
     """Rational-quadratic kernel
 
@@ -179,7 +176,6 @@ class RationalQuadratic(BaseKernel):
 
     def _call(self, x, y):
         return self.sigma**2 * (1. + (dist.cdist(x, y)**2)/(2.*self.alpha*self.l**2))**(-self.alpha)
-
 
 class Sigmoid(BaseKernel):
     """Sigmoid kernel:
