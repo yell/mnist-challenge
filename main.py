@@ -418,10 +418,9 @@ def gp(load_nn=True):
     print "\nTest accuracy {0:.4f} (error {1:.2f}%)".format(acc, 100. * (1. - acc))
 
 
-
 if __name__ == '__main__':
     # Uncomment what to run:
-    # -------------------------------------------------
+    # ----------------------
     # knn(load_nn=True)
     # knn_without_nn()
     # nn(load_nn=False)
