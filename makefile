@@ -8,8 +8,8 @@ test:
 
 clean:
 	find . -name '*.pyc' -type f -delete
-	# find . -name 'epoch*.png' -type f -delete
+	find . -name 'epoch*.png' -type f -delete
+	find ml_mnist/nn/ -name 'epoch*.png' -type f -delete
 	rm -rf cover/
 	rm -rf .coverage
 	rm -rf cv_models/*
-	rm -rf ml_mnist/nn/epoch*.png
