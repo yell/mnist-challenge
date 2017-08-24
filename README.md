@@ -21,7 +21,7 @@ git clone https://github.com/monsta-hd/ml-mnist
 cd ml-mnist/
 sudo pip install -r requirements.txt
 ```
-After installation, tests can be run:
+After installation, tests can be run with:
 ```bash
 make test
 ```
