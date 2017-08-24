@@ -7,7 +7,7 @@
 data/*.npy
 data/*idx1-ubyte
 data/*idx3-ubyte
-experiments/.ipynb_checkpoints/*
+experiments/.ipynb_checkpoints/
 learning_curves/*
 ml_mnist/.idea/*
 ml_mnist/nn/learning_curves/*
