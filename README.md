@@ -1,5 +1,5 @@
 # ML MNIST Challenge
-This contest was offered within TU Munich's course Machine Learning 1 (IN2064).<br>
+This contest was offered within TU Munich's course Machine Learning (IN2064).<br>
 The goal was to implement k-NN, Neural Network, Logistic Regression and Gaussian Process Classifier in 
 python from scratch and achieve minimal average test error among these classifiers on well-known MNIST dataset, 
 without ensemble learning.
