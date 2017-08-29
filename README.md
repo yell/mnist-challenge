@@ -27,8 +27,8 @@ make test
 ```
 
 ## How to run
-Check `main.py` to reproduce training and testing the final models.<br>
-Check also `experiments/cross_validations.ipynb` to see what I've tried.<br>
+Check [main.py](main.py) to reproduce training and testing the final models.<br>
+Check also [experiments notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.<br>
 
 ## System
 All computations and time measurements were made on laptop `i7-5500U CPU @ 2.40GHz x 4` `12GB RAM`
