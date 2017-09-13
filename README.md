@@ -30,6 +30,13 @@ make test
 Check [main.py](main.py) to reproduce training and testing the final models.<br>
 Check also [experiments notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.<br>
 
+## Features
+* Apart from specified algorithms, there are also PCA and RBM implementations
+* Most of the classes contain doctests so they are easy to understand
+* All randomness in algorithms or functions is reproducible (seeds)
+* Support of simple readable serialization (JSON)
+* There are also some infrastructure for model selection, feature selection, data augmentation, metrics, plots etc.)
+
 ## System
 All computations and time measurements were made on laptop `i7-5500U CPU @ 2.40GHz x 4` `12GB RAM`
 
