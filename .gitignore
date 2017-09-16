@@ -7,6 +7,8 @@
 data/*.npy
 data/*idx1-ubyte
 data/*idx3-ubyte
+data/mnist/*
+data/fashion_mnist/*
 experiments/.ipynb_checkpoints/
 learning_curves/*
 ml_mnist/.idea/*
