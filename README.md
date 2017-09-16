@@ -36,6 +36,7 @@ Check also [experiments notebook](https://nbviewer.jupyter.org/github/monsta-hd/
 * All randomness in algorithms or functions is reproducible (seeds)
 * Support of simple readable serialization (JSON)
 * There are also some infrastructure for model selection, feature selection, data augmentation, metrics, plots etc.)
+* Support for ***MNIST*** or ***Fashion MNIST*** (both have the same structure thus both can be loaded using [same utility](ml_mnist/utils/dataset.py)
 
 ## System
 All computations and time measurements were made on laptop `i7-5500U CPU @ 2.40GHz x 4` `12GB RAM`
