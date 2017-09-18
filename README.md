@@ -43,7 +43,7 @@ Check also [experiments notebook](https://nbviewer.jupyter.org/github/monsta-hd/
 ## System
 All computations and time measurements were made on laptop `i7-5500U CPU @ 2.40GHz x 4` `12GB RAM`
 
-## Possible Future work
+## Possible future work
 Here the list of what can also be tried regarding these particular 4 ML algorithms (didn't have time to check it, or it was forbidden by the rules, e.g. ensemble learning):
 * Model averaging for k-NN: train a group of k-NNs with different parameter *k* (say, 2, 4, ..., 128) and average their predictions;
 * More sophisticated metrics (say, from `scipy.spatial.distance`) for k-NN;
