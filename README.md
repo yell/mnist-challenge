@@ -13,7 +13,9 @@ without ensemble learning.
 | ***LogReg*** | 32 batches; 91 epoch; L2-penalty, &#955; = 3.16 &#183; 10<sup>&ndash;4</sup>; optimizer &ndash; *Adam* (learning<br/>rate 10<sup>&ndash;3</sup>, rest &ndash; defaults from paper)<br/>*Preprocessing*: Feature vectors extracted from ***NN***. | **1.01** |
 | ***GPC*** | 794 random data points were used for training; &#963;<sub>n</sub> = 0; RBF kernel (&#963;<sub>f</sub> = 0.4217,<br/>&#947; = 1/2l<sup>2</sup> = 0.0008511); Newton iterations for Laplace approximation till<br/>&#916;Log-Marginal-Likelihood &leq; 10<sup>&ndash;7</sup>; solve linear systems iteratively using CG with<br/> 10<sup>&ndash;7</sup> tolerance; for prediction generate 2000 samples for each test point.<br/>*Preprocessing*: Feature vectors extracted from ***NN***. | **1.59** |
 
-Also check for some plots (confusion matrices, learning curves etc.) in `experiments/plots/`.
+## Visualizations
+![1](img/demo.png)
+And more available in `experiments/plots/`.
 
 ## How to install
 ```bash
