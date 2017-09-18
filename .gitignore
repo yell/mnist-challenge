@@ -1,5 +1,4 @@
 *.json
-*.png
 *.pyc
 *.zip
 .idea/*
