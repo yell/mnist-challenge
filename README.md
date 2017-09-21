@@ -21,7 +21,7 @@ And more available in `experiments/plots/`.
 ```bash
 git clone https://github.com/monsta-hd/ml-mnist
 cd ml-mnist/
-sudo pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 After installation, tests can be run with:
 ```bash
