@@ -32,7 +32,7 @@ make test
 Check [main.py](main.py) to reproduce training and testing the final models.
 
 ## Experiments
-See also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.
+Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.
 
 ## Features
 * Apart from specified algorithms, there are also PCA and RBM implementations
