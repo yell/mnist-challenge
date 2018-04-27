@@ -32,7 +32,8 @@ make test
 Check [main.py](main.py) to reproduce training and testing the final models.
 
 ## Experiments
-Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.
+Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.<br/>
+**Note**: the approach RBM + LogReg gave only at most `91.8%` test accuracy since RBM takes too long to train with given pure python code, thus it was only trained on small subset of data (and still underfitted). However, with properly trained RBM on the whole training set, this approach can give `1.83%` test error (see my [Boltzmann machines project](https://github.com/monsta-hd/boltzmann-machines))
 
 ## Features
 * Apart from specified algorithms, there are also PCA and RBM implementations
