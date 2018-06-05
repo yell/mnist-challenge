@@ -29,7 +29,19 @@ make test
 ```
 
 ## How to run
-Check [main.py](main.py) to reproduce training and testing the final models.
+Check [main.py](main.py) to reproduce training and testing the final models:
+```bash
+usage: main.py [-h] [--load-nn] model
+
+positional arguments:
+  model       which model to run, {'gp', 'knn', 'knn-without-nn', 'logreg',
+              'nn'}
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --load-nn   whether to use pretrained neural network, ignored if 'knn-
+              without-nn' is used (default: False)
+```
 
 ## Experiments
 Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.<br/>
