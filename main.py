@@ -1,5 +1,6 @@
-# Look at the very bottom of this file
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import argparse
 import numpy as np
 
 from ml_mnist.gp import GPClassifier
@@ -29,8 +30,8 @@ def _train_nn(X, y):
     X : training data
     y : training labels (not one-hot encoded!)
 
-    Output
-    ------
+    Possible output
+    ---------------
     Running '_train_nn'
     Applying augmentation ... Elapsed time: 112.495 sec
     Training NN ...
@@ -132,11 +133,77 @@ def _train_nn(X, y):
     return nn
 
 
+def gp(load_nn=True):
+    """
+    Possible output (if `load_nn` is True)
+    --------------------------------------
+    Running 'gp'
+    Loading data ...
+    Loading NN ...
+    Extracting feature vectors ... Elapsed time: 1.932 sec
+    Training GP ... Elapsed time: 403.602 sec
+    Evaluating GP ... Elapsed time: 22.021 sec
+
+    Test accuracy 0.9839 (error 1.61%)
+    [!] 1.59% if mean is subtracted (lines 394, 395)
+    """
+    print "Running 'gp'"
+    print "Loading data ..."
+    X_train, y_train = load_mnist(mode='train', path='data/')
+    X_test, y_test = load_mnist(mode='test', path='data/')
+    X_train /= 255.
+    X_test /= 255.
+    y_test = one_hot(y_test)
+
+    if load_nn:
+        print "Loading NN ..."
+        nn = load_model('models/nn.json')
+    else:
+        nn = _train_nn(X_train.copy(), y_train.copy())
+
+    tts = TrainTestSplitter(shuffle=True, random_seed=1337)
+    indices, _ = tts.split(y_train, train_ratio=800. / 60000., stratify=True)  # 794
+    X_train = X_train[indices]
+    y_train = one_hot(y_train[indices])
+
+    print_inline("Extracting feature vectors ... ")
+    with Stopwatch(verbose=True):
+        nn.forward_pass(X_train)
+        X_train = leaky_relu(nn.layers[13]._last_input)
+        nn.forward_pass(X_test)
+        X_test = leaky_relu(nn.layers[13]._last_input)
+
+    X_train = StandardScaler(with_std=False).fit_transform(X_train)
+    X_test = StandardScaler(with_std=False).fit_transform(X_test)
+
+    gp = GPClassifier(algorithm='cg',
+                      kernel='rbf',
+                      kernel_params=dict(
+                          sigma=0.4217,
+                          gamma=0.0008511
+                      ),
+                      sigma_n=0.,
+                      max_iter=10000,
+                      tol=1e-7,
+                      cg_tol=1e-7,
+                      n_samples=2000,
+                      random_seed=1337)
+    print_inline("Training GP ... ")
+    with Stopwatch(verbose=True):
+        gp.fit(X_train, y_train)
+
+    print_inline("Evaluating GP ... ")
+    with Stopwatch(verbose=True):
+        y_pred = gp.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+
+    print "\nTest accuracy {0:.4f} (error {1:.2f}%)".format(acc, 100. * (1. - acc))
+
 
 def knn(load_nn=True):
     """
-    Output (if `load_nn` is True)
-    -----------------------------
+    Possible output (if `load_nn` is True)
+    --------------------------------------
     Running 'knn'
     Loading data ...
     Loading NN ...
@@ -181,8 +248,8 @@ def knn(load_nn=True):
 
 def knn_without_nn():
     """
-    Output
-    ------
+    Possible output
+    ---------------
     Running 'knn_without_nn'
     Loading data ...
     Training PCA ... Elapsed time: 10.642 sec
@@ -240,8 +307,8 @@ def knn_without_nn():
 
 def nn(load_nn=True):
     """
-    Output (if `load_nn` is True)
-    -----------------------------
+    Possible output (if `load_nn` is True)
+    --------------------------------------
     Running 'nn'
     Loading data ...
     Loading NN ...
@@ -273,8 +340,8 @@ def nn(load_nn=True):
 
 def logreg(load_nn=True):
     """
-    Output (if `load_nn` is True)
-    -----------------------------
+    Possible output (if `load_nn` is True)
+    --------------------------------------
     Running 'logreg'
     Loading data ...
     Loading NN ...
@@ -351,79 +418,25 @@ def logreg(load_nn=True):
     print "\nTest accuracy {0:.4f} (error {1:.2f}%)".format(acc, 100. * (1. - acc))
 
 
-def gp(load_nn=True):
-    """
-    Output (if `load_nn` is True)
-    -----------------------------
-    Running 'gp'
-    Loading data ...
-    Loading NN ...
-    Extracting feature vectors ... Elapsed time: 1.932 sec
-    Training GP ... Elapsed time: 403.602 sec
-    Evaluating GP ... Elapsed time: 22.021 sec
-
-    Test accuracy 0.9839 (error 1.61%)
-    [!] 1.59% if mean is subtracted (lines 394, 395)
-    """
-    print "Running 'gp'"
-    print "Loading data ..."
-    X_train, y_train = load_mnist(mode='train', path='data/')
-    X_test, y_test = load_mnist(mode='test', path='data/')
-    X_train /= 255.
-    X_test /= 255.
-    y_test = one_hot(y_test)
-
-    if load_nn:
-        print "Loading NN ..."
-        nn = load_model('models/nn.json')
-    else:
-        nn = _train_nn(X_train.copy(), y_train.copy())
-
-    tts = TrainTestSplitter(shuffle=True, random_seed=1337)
-    indices, _ = tts.split(y_train, train_ratio=800./60000., stratify=True) # 794
-    X_train = X_train[indices]
-    y_train = one_hot(y_train[indices])
-
-    print_inline("Extracting feature vectors ... ")
-    with Stopwatch(verbose=True):
-        nn.forward_pass(X_train)
-        X_train = leaky_relu(nn.layers[13]._last_input)
-        nn.forward_pass(X_test)
-        X_test = leaky_relu(nn.layers[13]._last_input)    
-
-    X_train = StandardScaler(with_std=False).fit_transform(X_train)
-    X_test = StandardScaler(with_std=False).fit_transform(X_test)
-
-    gp = GPClassifier(algorithm='cg', 
-                      kernel='rbf',
-                      kernel_params=dict(
-                            sigma=0.4217,
-                            gamma=0.0008511
-                      ),
-                      sigma_n=0.,
-                      max_iter=10000, 
-                      tol=1e-7,
-                      cg_tol=1e-7, 
-                      n_samples=2000,
-                      random_seed=1337)
-    print_inline("Training GP ... ")
-    with Stopwatch(verbose=True):    
-        gp.fit(X_train, y_train)
-
-    print_inline("Evaluating GP ... ")
-    with Stopwatch(verbose=True):
-        y_pred = gp.predict(X_test)
-        acc = accuracy_score(y_test, y_pred)
-    
-    print "\nTest accuracy {0:.4f} (error {1:.2f}%)".format(acc, 100. * (1. - acc))
-
-
 if __name__ == '__main__':
-    # Uncomment what to run:
-    # ----------------------
-    # knn(load_nn=True)
-    # knn_without_nn()
-    # nn(load_nn=False)
-    # logreg(load_nn=True)
-    # gp(load_nn=True)
-    pass
+    # define and parse arguments
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('model', type=str,
+                        help="which model to run, {'gp', 'knn', 'knn-without-nn', 'logreg', 'nn'}")
+    parser.add_argument('--load-nn', action='store_true',
+                        help="whether to use pretrained neural network, ignored if 'knn-without-nn' is used")
+    args = parser.parse_args()
+
+    # validate and run model
+    model_map = {
+        'gp': gp,
+        'knn': knn,
+        'knn-without-nn': knn_without_nn,
+        'logreg': logreg,
+        'nn': nn
+    }
+    if not args.model in model_map:
+        print "Invalid model: '{0}'. Use --help for list of available models.".format(args.model)
+    else:
+        model = model_map[args.model]
+        model(args.load_nn)
