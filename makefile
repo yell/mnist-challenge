@@ -1,5 +1,5 @@
 test:
-	nosetests
+	nosetests --config .noserc
 	rm -rf 'ml_mnist/knn.json'
 	rm -rf 'ml_mnist/knn/knn.json'
 	rm -rf 'ml_mnist/decomposition/pca.json'
