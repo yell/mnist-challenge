@@ -19,8 +19,8 @@ And more available in `experiments/plots/`.
 
 ## How to install
 ```bash
-git clone https://github.com/monsta-hd/ml-mnist
-cd ml-mnist/
+git clone https://github.com/yell/mnist-challenge
+cd mnist-challenge/
 pip install -r requirements.txt
 ```
 After installation, tests can be run with:
@@ -44,8 +44,8 @@ optional arguments:
 ```
 
 ## Experiments
-Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnist/blob/master/experiments/cross_validations.ipynb) to see what I've tried.<br/>
-**Note**: the approach RBM + LogReg gave only at most `91.8%` test accuracy since RBM takes too long to train with given pure python code, thus it was only trained on small subset of data (and still underfitted). However, with properly trained RBM on the whole training set, this approach can give `1.83%` test error (see my [Boltzmann machines project](https://github.com/monsta-hd/boltzmann-machines))
+Check also [this notebook](experiments/cross_validations.ipynb) to see what I've tried.<br/>
+**Note**: the approach RBM + LogReg gave only at most `91.8%` test accuracy since RBM takes too long to train with given pure python code, thus it was only trained on small subset of data (and still underfitted). However, with properly trained RBM on the whole training set, this approach can give `1.83%` test error (see my [Boltzmann machines project](https://github.com/yell/boltzmann-machines))
 
 ## Features
 * Apart from specified algorithms, there are also PCA and RBM implementations
@@ -53,7 +53,7 @@ Check also [this notebook](https://nbviewer.jupyter.org/github/monsta-hd/ml-mnis
 * All randomness in algorithms or functions is reproducible (seeds)
 * Support of simple readable serialization (JSON)
 * There are also some infrastructure for model selection, feature selection, data augmentation, metrics, plots etc.)
-* Support for ***MNIST*** or ***Fashion MNIST*** (both have the same structure thus both can be loaded using the [same routine](ml_mnist/utils/dataset.py)), haven't tried the latter yet, though
+* Support for ***MNIST*** or ***Fashion MNIST*** (both have the same structure thus both can be loaded using the [same routine](mnist-challenge/utils/dataset.py)), haven't tried the latter yet, though
 
 ## System
 All computations and time measurements were made on laptop `i7-5500U CPU @ 2.40GHz x 4` `12GB RAM`
